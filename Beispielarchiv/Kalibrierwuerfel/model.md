@@ -1,13 +1,14 @@
 ---
 title: Kalibrierwürfel 20 mm
 tags: [kalibrierung, testdruck]
+sammlungen: [Erste Schritte]
 autor: 3Dark
 lizenz: CC0
 material: PLA
 duese: 0.4
 schichthoehe: 0.2
 stuetzen: nein
-bewertung: 3
+bewertung: 5
 ---
 
 ## Beschreibung

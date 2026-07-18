@@ -4,13 +4,21 @@ struct ContentView: View {
     @EnvironmentObject private var store: ArchiveStore
 
     @State private var selectedTags: Set<String> = []
+    @State private var selectedCollection: String?
     @State private var matchAll = false
+    @State private var minRating = 0
     @State private var searchText = ""
     @State private var selectedModelID: Model3D.ID?
     @State private var showingNewModelSheet = false
 
     private var filteredModels: [Model3D] {
         store.models.filter { model in
+            if let selectedCollection {
+                guard model.collections.contains(selectedCollection) else { return false }
+            }
+            if minRating > 0 {
+                guard model.rating >= minRating else { return false }
+            }
             if !selectedTags.isEmpty {
                 let modelTags = Set(model.tags)
                 if matchAll {
@@ -32,10 +40,15 @@ struct ContentView: View {
                 WelcomeView()
             } else {
                 NavigationSplitView {
-                    SidebarView(selectedTags: $selectedTags, matchAll: $matchAll)
-                        .navigationSplitViewColumnWidth(min: 180, ideal: 230)
+                    SidebarView(
+                        selectedTags: $selectedTags,
+                        selectedCollection: $selectedCollection,
+                        matchAll: $matchAll,
+                        minRating: $minRating
+                    )
+                    .navigationSplitViewColumnWidth(min: 180, ideal: 230)
                 } content: {
-                    ModelGridView(
+                    ModelBrowserView(
                         models: filteredModels,
                         selectedID: $selectedModelID,
                         onNewModel: { showingNewModelSheet = true }

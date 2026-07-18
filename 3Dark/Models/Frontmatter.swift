@@ -39,20 +39,33 @@ struct Frontmatter: Equatable, Hashable {
         self[key] = trimmed.isEmpty ? nil : Frontmatter.quoteIfNeeded(trimmed)
     }
 
+    /// Listenwert (`key: [a, b]` bzw. Block-Liste) als String-Array.
+    /// Als Trenner wird neben Komma auch Semikolon akzeptiert,
+    /// damit handgeschriebene Dateien tolerant gelesen werden.
+    func list(_ key: String) -> [String] {
+        guard let raw = self[key] else { return [] }
+        var inner = raw.trimmingCharacters(in: .whitespaces)
+        if inner.hasPrefix("["), inner.hasSuffix("]") {
+            inner = String(inner.dropFirst().dropLast())
+        }
+        return inner.split(whereSeparator: { $0 == "," || $0 == ";" })
+            .map { Frontmatter.unquote($0.trimmingCharacters(in: .whitespaces)) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Setzt eine Inline-Liste; leere Liste entfernt das Feld,
+    /// außer `keepEmpty` verlangt ein explizites `[]`.
+    mutating func setList(_ key: String, _ values: [String], keepEmpty: Bool = false) {
+        if values.isEmpty, !keepEmpty {
+            self[key] = nil
+        } else {
+            self[key] = "[" + values.joined(separator: ", ") + "]"
+        }
+    }
+
     var tags: [String] {
-        get {
-            guard let raw = self["tags"] else { return [] }
-            var inner = raw.trimmingCharacters(in: .whitespaces)
-            if inner.hasPrefix("["), inner.hasSuffix("]") {
-                inner = String(inner.dropFirst().dropLast())
-            }
-            return inner.split(separator: ",")
-                .map { Frontmatter.unquote($0.trimmingCharacters(in: .whitespaces)) }
-                .filter { !$0.isEmpty }
-        }
-        set {
-            self["tags"] = newValue.isEmpty ? "[]" : "[" + newValue.joined(separator: ", ") + "]"
-        }
+        get { list("tags") }
+        set { setList("tags", newValue, keepEmpty: true) }
     }
 
     // MARK: - Parsen & Serialisieren

@@ -6,7 +6,8 @@ struct ModelDetailView: View {
     let model: Model3D
 
     @State private var title: String
-    @State private var tagsText: String
+    @State private var tagList: [String]
+    @State private var collectionList: [String]
     @State private var quelle: String
     @State private var autor: String
     @State private var lizenz: String
@@ -23,7 +24,8 @@ struct ModelDetailView: View {
         self.model = model
         let fm = model.frontmatter
         _title = State(initialValue: fm.string("title").isEmpty ? model.folderURL.lastPathComponent : fm.string("title"))
-        _tagsText = State(initialValue: fm.tags.joined(separator: ", "))
+        _tagList = State(initialValue: fm.tags)
+        _collectionList = State(initialValue: fm.list("sammlungen"))
         _quelle = State(initialValue: fm.string("quelle"))
         _autor = State(initialValue: fm.string("autor"))
         _lizenz = State(initialValue: fm.string("lizenz"))
@@ -39,10 +41,8 @@ struct ModelDetailView: View {
     private var appliedModel: Model3D {
         var m = model
         m.frontmatter.setString("title", title)
-        m.frontmatter.tags = tagsText
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        m.frontmatter.tags = tagList
+        m.frontmatter.setList("sammlungen", collectionList)
         m.frontmatter.setString("quelle", quelle)
         m.frontmatter.setString("autor", autor)
         m.frontmatter.setString("lizenz", lizenz)
@@ -117,7 +117,34 @@ struct ModelDetailView: View {
     private var metadataSection: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 8) {
             field("Titel", text: $title)
-            field("Tags", text: $tagsText, prompt: "kalibrierung, deko, ersatzteil")
+            GridRow {
+                Text("Tags")
+                    .gridColumnAlignment(.trailing)
+                    .foregroundStyle(.secondary)
+                TokenField(
+                    tokens: $tagList,
+                    suggestions: store.tagCounts.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending },
+                    placeholder: "Tag hinzufügen …",
+                    accent: .blue,
+                    icon: "tag",
+                    onEdited: save
+                )
+                .frame(maxWidth: 420, alignment: .leading)
+            }
+            GridRow {
+                Text("Sammlungen")
+                    .gridColumnAlignment(.trailing)
+                    .foregroundStyle(.secondary)
+                TokenField(
+                    tokens: $collectionList,
+                    suggestions: store.collectionCounts.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending },
+                    placeholder: "Sammlung hinzufügen …",
+                    accent: .purple,
+                    icon: "square.stack.3d.up",
+                    onEdited: save
+                )
+                .frame(maxWidth: 420, alignment: .leading)
+            }
             field("Quelle", text: $quelle, prompt: "https://…")
             field("Autor", text: $autor)
             field("Lizenz", text: $lizenz, prompt: "CC BY 4.0")
@@ -146,6 +173,7 @@ struct ModelDetailView: View {
                 .labelsHidden()
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 320, alignment: .leading)
+                .onChange(of: bewertung) { _, _ in save() }
             }
         }
     }
@@ -158,7 +186,13 @@ struct ModelDetailView: View {
             TextField("", text: text, prompt: prompt.map { Text($0) })
                 .textFieldStyle(.roundedBorder)
                 .frame(maxWidth: 420, alignment: .leading)
+                .onSubmit(save)
         }
+    }
+
+    /// Übernimmt den aktuellen Formularstand in model.md.
+    private func save() {
+        store.save(appliedModel)
     }
 
     // MARK: - Markdown

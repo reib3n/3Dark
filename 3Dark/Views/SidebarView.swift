@@ -3,13 +3,17 @@ import SwiftUI
 struct SidebarView: View {
     @EnvironmentObject private var store: ArchiveStore
     @Binding var selectedTags: Set<String>
+    @Binding var selectedCollection: String?
     @Binding var matchAll: Bool
+    @Binding var minRating: Int
 
     var body: some View {
         List {
             Section {
                 Button {
                     selectedTags.removeAll()
+                    selectedCollection = nil
+                    minRating = 0
                 } label: {
                     HStack {
                         Label("Alle Modelle", systemImage: "square.grid.2x2")
@@ -20,6 +24,28 @@ struct SidebarView: View {
                     }
                 }
                 .buttonStyle(.plain)
+            }
+
+            let collectionCounts = store.collectionCounts
+            if !collectionCounts.isEmpty {
+                Section("Sammlungen") {
+                    ForEach(collectionCounts.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }, id: \.self) { collection in
+                        Button {
+                            selectedCollection = selectedCollection == collection ? nil : collection
+                        } label: {
+                            HStack {
+                                Image(systemName: selectedCollection == collection ? "checkmark.circle.fill" : "square.stack.3d.up")
+                                    .foregroundStyle(selectedCollection == collection ? Color.accentColor : .secondary)
+                                Text(collection)
+                                Spacer()
+                                Text("\(collectionCounts[collection] ?? 0)")
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
 
             Section("Tags") {
@@ -44,6 +70,29 @@ struct SidebarView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                }
+            }
+
+            Section("Bewertung") {
+                ForEach((1...5).reversed(), id: \.self) { stars in
+                    let count = store.models.filter { $0.rating >= stars }.count
+                    Button {
+                        minRating = minRating == stars ? 0 : stars
+                    } label: {
+                        HStack {
+                            Image(systemName: minRating == stars ? "checkmark.circle.fill" : "star")
+                                .foregroundStyle(minRating == stars ? Color.accentColor : .secondary)
+                            RatingStars(rating: stars)
+                            Text("und mehr")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(count)")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 

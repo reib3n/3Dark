@@ -19,6 +19,10 @@ struct Model3D: Identifiable, Equatable, Hashable {
 
     var tags: [String] { frontmatter.tags }
 
+    /// Sammlungen fassen zusammengehörige Modelle (z. B. ein Schachspiel)
+    /// über das Frontmatter-Feld `sammlungen` zusammen.
+    var collections: [String] { frontmatter.list("sammlungen") }
+
     var rating: Int { Int(frontmatter.string("bewertung")) ?? 0 }
 
     /// Die Datei, die für Vorschau und Thumbnail verwendet wird

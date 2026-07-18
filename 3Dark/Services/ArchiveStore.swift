@@ -13,7 +13,13 @@ final class ArchiveStore: ObservableObject {
     @Published var errorMessage: String?
 
     private var watcher: FolderWatcher?
+    private var pollTimer: Timer?
     private static let defaultsKey = "ArchiveRootPath"
+
+    /// Fallback-Intervall, mit dem das Archiv zusätzlich zu FSEvents
+    /// regelmäßig neu eingelesen wird (z. B. für Netz-/Sync-Volumes,
+    /// auf denen FSEvents nicht zuverlässig feuert).
+    private static let pollInterval: TimeInterval = 15
 
     init() {
         if let path = UserDefaults.standard.string(forKey: Self.defaultsKey) {
@@ -46,6 +52,10 @@ final class ArchiveStore: ObservableObject {
         watcher = FolderWatcher(url: url) { [weak self] in
             Task { @MainActor in self?.reload() }
         }
+        pollTimer?.invalidate()
+        pollTimer = Timer.scheduledTimer(withTimeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.reload() }
+        }
         reload()
     }
 
@@ -68,7 +78,11 @@ final class ArchiveStore: ObservableObject {
             .map { loadModel(at: $0) }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
 
-        models = loaded
+        // Nur publizieren, wenn sich wirklich etwas geändert hat —
+        // das Polling soll die UI nicht unnötig anfassen.
+        if loaded != models {
+            models = loaded
+        }
     }
 
     private func loadModel(at folder: URL) -> Model3D {
@@ -126,18 +140,9 @@ final class ArchiveStore: ObservableObject {
     @discardableResult
     func createModel(named name: String) -> Model3D? {
         guard let rootURL else { return nil }
-        let clean = name
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: ":", with: "-")
-            .trimmingCharacters(in: .whitespaces)
-        guard !clean.isEmpty else { return nil }
-
-        var folder = rootURL.appendingPathComponent(clean, isDirectory: true)
-        var counter = 2
-        while FileManager.default.fileExists(atPath: folder.path) {
-            folder = rootURL.appendingPathComponent("\(clean) \(counter)", isDirectory: true)
-            counter += 1
-        }
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        let folder = ModelImporter.uniqueFolderURL(for: name, in: rootURL)
+        let clean = folder.lastPathComponent
 
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
@@ -153,6 +158,37 @@ final class ArchiveStore: ObservableObject {
             errorMessage = "Modell konnte nicht angelegt werden: \(error.localizedDescription)"
             return nil
         }
+    }
+
+    /// Importiert ZIPs, Ordner oder einzelne Dateien als jeweils neues Modell.
+    /// Enthaltene Textdateien wandern in die model.md (siehe ModelImporter).
+    @discardableResult
+    func importModels(from urls: [URL]) -> [Model3D] {
+        guard let rootURL else { return [] }
+        var importedPaths: [String] = []
+        var notes: [String] = []
+
+        for url in urls {
+            guard url.path != rootURL.path, !url.path.hasPrefix(rootURL.path + "/") else {
+                notes.append("\(url.lastPathComponent) liegt bereits im Archiv.")
+                continue
+            }
+            do {
+                let result = try ModelImporter.importModel(from: url, intoArchive: rootURL)
+                importedPaths.append(result.folderURL.path)
+                if !result.skippedFiles.isEmpty {
+                    notes.append("\(result.folderURL.lastPathComponent): nicht übernommen (zu groß/nicht lesbar): \(result.skippedFiles.joined(separator: ", "))")
+                }
+            } catch {
+                notes.append("Import von \(url.lastPathComponent) fehlgeschlagen: \(error.localizedDescription)")
+            }
+        }
+
+        reload()
+        if !notes.isEmpty {
+            errorMessage = notes.joined(separator: "\n")
+        }
+        return models.filter { importedPaths.contains($0.id) }
     }
 
     func importFiles(_ urls: [URL], into model: Model3D) {
@@ -176,6 +212,16 @@ final class ArchiveStore: ObservableObject {
         for model in models {
             for tag in model.tags {
                 counts[tag, default: 0] += 1
+            }
+        }
+        return counts
+    }
+
+    var collectionCounts: [String: Int] {
+        var counts: [String: Int] = [:]
+        for model in models {
+            for collection in model.collections {
+                counts[collection, default: 0] += 1
             }
         }
         return counts

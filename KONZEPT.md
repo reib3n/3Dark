@@ -50,6 +50,7 @@ YAML-Frontmatter für strukturierte Daten, darunter freier Markdown-Text:
 ---
 title: 3DBenchy
 tags: [kalibrierung, boot, deko]
+sammlungen: [Erste Schritte]
 quelle: https://www.printables.com/model/3161-3d-benchy
 autor: CreativeTools
 lizenz: CC BY-ND
@@ -71,6 +72,10 @@ Bei 0.2 mm ohne Stützen problemlos …
 ```
 
 - Alle Frontmatter-Felder sind optional außer `title` und `tags`.
+- `sammlungen` gruppiert zusammengehörige Modelle (z. B. ein Schachspiel).
+  Die Zugehörigkeit liegt beim Modell — ein Modell kann in mehreren
+  Sammlungen sein, Ordner-Umbenennungen brechen nichts. Semantik:
+  Tags beschreiben Eigenschaften, Sammlungen Zusammengehörigkeit.
 - Unbekannte Felder bleiben beim Speichern erhalten (Roundtrip-sicher).
 - Datumsfelder als ISO-Format (`YYYY-MM-DD`).
 
@@ -86,13 +91,16 @@ Bei 0.2 mm ohne Stützen problemlos …
 
 Dreispaltiges Standard-Layout (`NavigationSplitView`):
 
-1. **Sidebar:** „Alle Modelle", Tag-Liste mit Zählern, später Smart Folders.
-   Mehrere Tags anklickbar → UND/ODER-Umschalter.
-2. **Übersicht:** Grid mit Thumbnails + Titel + Tags; Suchfeld (Volltext über
-   Titel, Tags, Beschreibung); Sortierung nach Name/Datum/Bewertung.
+1. **Sidebar:** „Alle Modelle", Sammlungen und Tag-Liste mit Zählern, später
+   Smart Folders. Mehrere Tags anklickbar → UND/ODER-Umschalter.
+2. **Übersicht:** umschaltbar zwischen Thumbnail-Grid und kompakter Liste
+   (Auswahl wird gemerkt); Suchfeld (Volltext über Titel, Tags, Sammlungen,
+   Beschreibung); Sortierung nach Name/Datum/Bewertung.
 3. **Detailansicht:**
    - 3D-Vorschau (SceneKit-View: rotieren, zoomen; Material-neutral gerendert)
-   - Metadaten-Formular (Frontmatter-Felder) + Tag-Editor mit Autocomplete
+   - Metadaten-Formular (Frontmatter-Felder); Enter übernimmt Änderungen.
+     Tags & Sammlungen als Chip-Felder: entfernbare Chips, neue Werte per
+     Enter/Komma, Auswahl bereits verwendeter Werte übers Plus-Menü
    - Markdown-Bereich: gerenderte Anzeige, umschaltbar auf Editor
    - Dateiliste des Ordners mit „Im Finder zeigen" und **„In Cura öffnen"**
 
@@ -103,8 +111,9 @@ und legt sie als `.thumbnail.png` im Modellordner ab (versteckt, regenerierbar).
 
 - Swift 5.x, SwiftUI, Zielversion macOS 14+
 - SceneKit + ModelIO für STL-Vorschau; eigener 3MF-Loader
-- Yams (SPM) für YAML-Frontmatter
-- FSEvents für Ordnerüberwachung
+- eigener minimaler Frontmatter-Parser (roundtrip-sicher, statt Yams)
+- FSEvents für Ordnerüberwachung, plus 15-s-Polling als Fallback für
+  Volumes ohne zuverlässige FSEvents (Netz-Shares, Sync-Dienste)
 - Index: in-memory beim Start aufgebaut (Frontmatter aller `model.md` parsen);
   bei Archiven dieser Größenordnung schnell genug, kein SQLite nötig
 - Verteilung: lokal signierte App, kein App Store; deshalb keine harten
@@ -122,9 +131,18 @@ und legt sie als `.thumbnail.png` im Modellordner ab (versteckt, regenerierbar).
 - [x] „Im Finder zeigen" / „In Cura öffnen"
 - [x] FSEvents: externe Änderungen live übernehmen
 
+**Import (umgesetzt):** ZIPs, Ordner oder einzelne Dateien werden per
+Drag & Drop auf die Übersicht oder über den Import-Button zu je einem neuen
+Modell. ZIPs werden entpackt (einzelne Wurzelordner werden angehoben,
+`__MACOSX` ausgefiltert), enthaltene Textdateien (txt/md/markdown, bis
+512 KB) wandern in Hierarchie-Reihenfolge als Abschnitte in die model.md
+und werden danach aus der Archiv-Kopie gelöscht — kein doppelter Inhalt.
+Bringt der Import eine model.md mit, dient sie als Basis (Migration
+zwischen Archiven). Die Quelle außerhalb des Archivs bleibt unangetastet.
+
 ## Später (Roadmap)
 
-- **v1.1:** ZIP-Import per Drag & Drop (Printables-Downloads auto-entpacken),
+- **v1.1:** ~~ZIP-Import per Drag & Drop~~ (umgesetzt),
   Duplikaterkennung per Datei-Hash
 - **v1.2:** G-Code archivieren + Metadaten (Druckzeit, Filament) auslesen,
   Druckhistorie als Tabelle im Markdown
