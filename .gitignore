@@ -1,0 +1,11 @@
+# Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Von der App generierte Thumbnails
+.thumbnail.png
