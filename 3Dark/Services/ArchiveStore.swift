@@ -97,14 +97,26 @@ final class ArchiveStore: ObservableObject {
             hasMarkdown = true
         }
 
-        let files = ((try? FileManager.default.contentsOfDirectory(
+        // Rekursiv, damit Bauteil-Unterordner (teile/, fotos/, …) sichtbar sind.
+        var files: [URL] = []
+        if let enumerator = FileManager.default.enumerator(
             at: folder,
             includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsHiddenFiles]
-        )) ?? [])
-            .filter { $0.lastPathComponent != "model.md" }
-            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory != true }
-            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+        ) {
+            for case let url as URL in enumerator {
+                guard (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory != true else { continue }
+                guard url.lastPathComponent != "model.md" else { continue }
+                files.append(url)
+            }
+        }
+        let prefix = folder.path + "/"
+        files.sort {
+            ModelImporter.hierarchyOrder(
+                $0.path.replacingOccurrences(of: prefix, with: ""),
+                $1.path.replacingOccurrences(of: prefix, with: "")
+            )
+        }
 
         return Model3D(
             folderURL: folder,

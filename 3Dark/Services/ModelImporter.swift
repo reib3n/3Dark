@@ -186,7 +186,7 @@ enum ModelImporter {
 
     /// Hierarchie-Reihenfolge: pro Ebene erst die Dateien (alphabetisch),
     /// dann die Unterordner — README.txt kommt also vor docs/….
-    private static func hierarchyOrder(_ a: String, _ b: String) -> Bool {
+    static func hierarchyOrder(_ a: String, _ b: String) -> Bool {
         let aComponents = a.components(separatedBy: "/")
         let bComponents = b.components(separatedBy: "/")
         for index in 0..<min(aComponents.count, bComponents.count) {

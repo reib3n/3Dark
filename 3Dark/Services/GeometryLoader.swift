@@ -21,6 +21,44 @@ enum GeometryLoader {
     private static let normalizedExtent: CGFloat = 10
 
     static func loadScene(from url: URL) throws -> SCNScene {
+        makeScene(around: try loadModelNode(from: url))
+    }
+
+    /// Gesamtansicht: alle Teile maßstabsgetreu nebeneinander auf einer
+    /// gemeinsamen Grundebene (gleiche Einheiten vorausgesetzt).
+    static func loadCombinedScene(from urls: [URL]) throws -> SCNScene {
+        var containers: [SCNNode] = []
+        for url in urls {
+            guard let node = try? loadModelNode(from: url) else { continue }
+            let container = SCNNode()
+            container.addChildNode(node)
+            containers.append(container)
+        }
+        guard !containers.isEmpty else {
+            throw GeometryError.loadFailed("Gesamtansicht")
+        }
+
+        let boxes = containers.map { $0.boundingBox }
+        let maxDimension = boxes
+            .map { max($0.max.x - $0.min.x, max($0.max.y - $0.min.y, $0.max.z - $0.min.z)) }
+            .max() ?? 1
+        let gap = maxDimension * 0.15
+
+        let group = SCNNode()
+        var cursorX: CGFloat = 0
+        for (container, box) in zip(containers, boxes) {
+            container.position = SCNVector3(
+                cursorX - box.min.x,
+                -box.min.y,
+                -(box.min.z + box.max.z) / 2
+            )
+            cursorX += (box.max.x - box.min.x) + gap
+            group.addChildNode(container)
+        }
+        return makeScene(around: group)
+    }
+
+    private static func loadModelNode(from url: URL) throws -> SCNNode {
         let ext = url.pathExtension.lowercased()
         let modelNode: SCNNode
 
@@ -44,7 +82,7 @@ enum GeometryLoader {
         }
 
         applyPrintMaterial(to: modelNode)
-        return makeScene(around: modelNode)
+        return modelNode
     }
 
     private static func makeScene(around modelNode: SCNNode) -> SCNScene {

@@ -2,12 +2,28 @@ import SwiftUI
 import SceneKit
 
 struct Model3DPreviewView: View {
-    let url: URL?
+    let files: [URL]
+    @Binding var selectedFile: URL?
 
     @State private var scene: SCNScene?
     @State private var errorText: String?
     @State private var isLoading = false
     @State private var resetToken = 0
+
+    private enum PreviewTarget: Equatable {
+        case none
+        case single(URL)
+        case combined([URL])
+    }
+
+    private var target: PreviewTarget {
+        if let selectedFile, files.contains(selectedFile) {
+            return .single(selectedFile)
+        }
+        if files.count > 1 { return .combined(files) }
+        if let first = files.first { return .single(first) }
+        return .none
+    }
 
     var body: some View {
         ZStack {
@@ -31,31 +47,74 @@ struct Model3DPreviewView: View {
                 )
             }
         }
+        .overlay(alignment: .topLeading) {
+            switch target {
+            case .combined(let urls):
+                Text("Gesamtansicht · \(urls.count) Teile")
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .glassBackground(in: Capsule())
+                    .padding(8)
+            case .single(let url) where files.count > 1:
+                Text(url.lastPathComponent)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .glassBackground(in: Capsule())
+                    .padding(8)
+            default:
+                EmptyView()
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             if scene != nil {
-                Button {
-                    resetToken += 1
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 14, weight: .medium))
-                        .padding(7)
-                        .background(.thinMaterial, in: Circle())
+                HStack(spacing: 8) {
+                    if files.count > 1, selectedFile != nil {
+                        Button {
+                            selectedFile = nil
+                        } label: {
+                            Label("Alle Teile", systemImage: "square.grid.2x2")
+                                .font(.system(size: 12, weight: .medium))
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 6)
+                                .glassBackground(in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Alle Teile gemeinsam anzeigen")
+                    }
+                    Button {
+                        resetToken += 1
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 14, weight: .medium))
+                            .padding(7)
+                            .glassBackground(in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Ansicht zurücksetzen (zentrieren und zurückdrehen)")
                 }
-                .buttonStyle(.plain)
-                .help("Ansicht zurücksetzen (zentrieren und zurückdrehen)")
                 .padding(10)
             }
         }
-        .task(id: url) {
+        .task(id: target) {
             scene = nil
             errorText = nil
-            guard let url else { return }
+            let target = target
+            guard target != .none else { return }
             isLoading = true
             defer { isLoading = false }
 
             let result = await Task.detached(priority: .userInitiated) { () -> Result<SCNScene, Error> in
                 do {
-                    return .success(try GeometryLoader.loadScene(from: url))
+                    switch target {
+                    case .single(let url):
+                        return .success(try GeometryLoader.loadScene(from: url))
+                    case .combined(let urls):
+                        return .success(try GeometryLoader.loadCombinedScene(from: urls))
+                    case .none:
+                        return .failure(GeometryError.loadFailed("Vorschau"))
+                    }
                 } catch {
                     return .failure(error)
                 }

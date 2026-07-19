@@ -1,13 +1,21 @@
 import AppKit
+import ImageIO
 import Metal
 import SceneKit
 
-/// Rendert Thumbnails offscreen und legt sie als `.thumbnail.png`
-/// im Modellordner ab (versteckt, jederzeit regenerierbar).
+/// Liefert Vorschaubilder: entweder ein vom Nutzer gewähltes Bild aus dem
+/// Modellordner (Frontmatter `vorschaubild`) oder ein offscreen gerendertes
+/// 3D-Thumbnail, das als `.thumbnail.png` im Modellordner abgelegt wird.
 actor ThumbnailProvider {
     static let shared = ThumbnailProvider()
 
+    private var imageCache: [String: (modified: Date, image: NSImage)] = [:]
+
     func thumbnail(for model: Model3D) -> NSImage? {
+        if let imageFile = model.previewImageFile,
+           let image = loadImageThumbnail(imageFile) {
+            return image
+        }
         guard let sourceURL = model.primary3DFile else { return nil }
         let thumbnailURL = model.thumbnailURL
 
@@ -20,6 +28,31 @@ actor ThumbnailProvider {
         }
 
         return render(source: sourceURL, to: thumbnailURL)
+    }
+
+    /// Herunterskalierte Bildvorschau, z. B. für Hover-Popover.
+    func imagePreview(for url: URL) -> NSImage? {
+        loadImageThumbnail(url)
+    }
+
+    /// Bilddatei als herunterskaliertes Thumbnail laden (mit Cache).
+    private func loadImageThumbnail(_ url: URL) -> NSImage? {
+        let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+        if let cached = imageCache[url.path], cached.modified == modified {
+            return cached.image
+        }
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: 512,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        let image = NSImage(cgImage: cgImage, size: .zero)
+        imageCache[url.path] = (modified, image)
+        return image
     }
 
     private func render(source: URL, to output: URL) -> NSImage? {

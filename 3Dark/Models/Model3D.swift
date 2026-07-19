@@ -11,6 +11,7 @@ struct Model3D: Identifiable, Equatable, Hashable {
     var id: String { folderURL.path }
 
     static let previewExtensions = ["stl", "3mf", "obj", "ply", "usdz"]
+    static let imageExtensions = ["png", "jpg", "jpeg", "heic", "gif", "tiff", "webp"]
 
     var title: String {
         let t = frontmatter.string("title")
@@ -36,11 +37,34 @@ struct Model3D: Identifiable, Equatable, Hashable {
         return nil
     }
 
+    /// Alle 3D-Dateien des Modells (für Einzel- und Gesamtvorschau).
+    var files3D: [URL] {
+        files.filter { Model3D.isPreviewable($0) }
+    }
+
+    /// Pfad einer Datei relativ zum Modellordner (für Anzeige/Gruppierung).
+    func relativePath(of file: URL) -> String {
+        file.path.replacingOccurrences(of: folderURL.path + "/", with: "")
+    }
+
     var markdownURL: URL { folderURL.appendingPathComponent("model.md") }
     var thumbnailURL: URL { folderURL.appendingPathComponent(".thumbnail.png") }
 
     static func isPreviewable(_ url: URL) -> Bool {
         previewExtensions.contains(url.pathExtension.lowercased())
+    }
+
+    static func isImage(_ url: URL) -> Bool {
+        imageExtensions.contains(url.pathExtension.lowercased())
+    }
+
+    /// Vom Nutzer gewähltes Vorschaubild (Frontmatter `vorschaubild`,
+    /// Pfad relativ zum Modellordner). Ersetzt das gerenderte Thumbnail.
+    var previewImageFile: URL? {
+        let relative = frontmatter.string("vorschaubild")
+        guard !relative.isEmpty else { return nil }
+        let url = folderURL.appendingPathComponent(relative)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
     func matches(search: String) -> Bool {

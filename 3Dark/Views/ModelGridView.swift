@@ -162,7 +162,7 @@ private struct ModelGridCell: View {
                 .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
         )
         .contentShape(Rectangle())
-        .task(id: model.primary3DFile) {
+        .task(id: [model.previewImageFile, model.primary3DFile]) {
             thumbnail = await ThumbnailProvider.shared.thumbnail(for: model)
         }
     }
@@ -213,7 +213,7 @@ private struct ModelListRow: View {
             }
         }
         .padding(.vertical, 2)
-        .task(id: model.primary3DFile) {
+        .task(id: [model.previewImageFile, model.primary3DFile]) {
             thumbnail = await ThumbnailProvider.shared.thumbnail(for: model)
         }
     }

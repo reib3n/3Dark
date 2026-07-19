@@ -72,6 +72,9 @@ Bei 0.2 mm ohne Stützen problemlos …
 ```
 
 - Alle Frontmatter-Felder sind optional außer `title` und `tags`.
+- `vorschaubild` (optional): Pfad einer Bilddatei relativ zum Modellordner,
+  die in der Übersicht statt des gerenderten 3D-Thumbnails gezeigt wird —
+  wählbar per Klick in der Dateiliste.
 - `sammlungen` gruppiert zusammengehörige Modelle (z. B. ein Schachspiel).
   Die Zugehörigkeit liegt beim Modell — ein Modell kann in mehreren
   Sammlungen sein, Ordner-Umbenennungen brechen nichts. Semantik:
@@ -97,7 +100,14 @@ Dreispaltiges Standard-Layout (`NavigationSplitView`):
    (Auswahl wird gemerkt); Suchfeld (Volltext über Titel, Tags, Sammlungen,
    Beschreibung); Sortierung nach Name/Datum/Bewertung.
 3. **Detailansicht:**
-   - 3D-Vorschau (SceneKit-View: rotieren, zoomen; Material-neutral gerendert)
+   - 3D-Vorschau (SceneKit-View: rotieren, zoomen, Ansicht zurücksetzen;
+     Material-neutral gerendert). Bei mehrteiligen Bauteilen zeigt die
+     Gesamtansicht alle Teile maßstabsgetreu nebeneinander; ein Klick auf
+     eine Datei in der Liste zeigt das Einzelteil.
+   - Mehrteilige Bauteile: ein Bauteil = ein Modellordner, Unterordner
+     (z. B. `teile/`) gruppieren die Dateien — die Dateiliste zeigt sie
+     rekursiv und gruppiert. Stückzahlen/Hinweise je Teil als
+     Markdown-Tabelle in der Beschreibung.
    - Metadaten-Formular (Frontmatter-Felder); Enter übernimmt Änderungen.
      Tags & Sammlungen als Chip-Felder: entfernbare Chips, neue Werte per
      Enter/Komma, Auswahl bereits verwendeter Werte übers Plus-Menü
@@ -109,7 +119,11 @@ und legt sie als `.thumbnail.png` im Modellordner ab (versteckt, regenerierbar).
 
 ## Technik
 
-- Swift 5.x, SwiftUI, Zielversion macOS 14+
+- Swift 5.x, SwiftUI, Zielversion macOS 14+; auf macOS 26 mit
+  Liquid-Glass-Elementen (Overlay-Bedienelemente via `glassEffect`,
+  Material-Fallback auf älteren Systemen)
+- Einstellungen (⌘,): Erscheinungsbild System/Hell/Dunkel,
+  Sprache Deutsch/Englisch (String Catalog, Quellsprache Deutsch)
 - SceneKit + ModelIO für STL-Vorschau; eigener 3MF-Loader
 - eigener minimaler Frontmatter-Parser (roundtrip-sicher, statt Yams)
 - FSEvents für Ordnerüberwachung, plus 15-s-Polling als Fallback für

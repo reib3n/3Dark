@@ -19,6 +19,8 @@ struct ModelDetailView: View {
     @State private var bewertung: Int
     @State private var bodyText: String
     @State private var showMarkdownPreview = false
+    @State private var previewFile: URL?
+    @State private var hoverPreviewFile: URL?
 
     init(model: Model3D) {
         self.model = model
@@ -62,7 +64,7 @@ struct ModelDetailView: View {
 
     var body: some View {
         VSplitView {
-            Model3DPreviewView(url: model.primary3DFile)
+            Model3DPreviewView(files: model.files3D, selectedFile: $previewFile)
                 .frame(minHeight: 200, idealHeight: 300)
 
             ScrollView {
@@ -92,11 +94,11 @@ struct ModelDetailView: View {
                 .help("Modellordner im Finder zeigen")
 
                 Button {
-                    if let file = model.primary3DFile { store.openInCura(file) }
+                    if let file = previewFile ?? model.primary3DFile { store.openInCura(file) }
                 } label: {
                     Label("In Cura öffnen", systemImage: "printer")
                 }
-                .help("3D-Datei an Cura übergeben")
+                .help("Angezeigte 3D-Datei an Cura übergeben")
                 .disabled(model.primary3DFile == nil)
 
                 Button {
@@ -178,7 +180,7 @@ struct ModelDetailView: View {
         }
     }
 
-    private func field(_ label: String, text: Binding<String>, prompt: String? = nil) -> some View {
+    private func field(_ label: LocalizedStringKey, text: Binding<String>, prompt: LocalizedStringKey? = nil) -> some View {
         GridRow {
             Text(label)
                 .gridColumnAlignment(.trailing)
@@ -238,6 +240,26 @@ struct ModelDetailView: View {
 
     // MARK: - Dateien
 
+    /// Dateien nach Unterordner gruppiert (Hauptordner zuerst).
+    private var groupedFiles: [(directory: String, files: [URL])] {
+        var groups: [String: [URL]] = [:]
+        for file in model.files {
+            let directory = (model.relativePath(of: file) as NSString).deletingLastPathComponent
+            groups[directory, default: []].append(file)
+        }
+        return groups
+            .sorted { a, b in
+                if a.key.isEmpty != b.key.isEmpty { return a.key.isEmpty }
+                return a.key.localizedStandardCompare(b.key) == .orderedAscending
+            }
+            .map { ($0.key, $0.value) }
+    }
+
+    private func isActivePreview(_ file: URL) -> Bool {
+        if let previewFile { return previewFile == file }
+        return model.files3D.count == 1 && model.files3D.first == file
+    }
+
     private var filesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Dateien")
@@ -248,26 +270,104 @@ struct ModelDetailView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(model.files, id: \.self) { file in
-                    HStack(spacing: 8) {
-                        Image(systemName: icon(for: file))
+                ForEach(groupedFiles, id: \.directory) { group in
+                    if !group.directory.isEmpty {
+                        Label(group.directory, systemImage: "folder")
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                            .frame(width: 18)
-                        Text(file.lastPathComponent)
-                        Spacer()
-                        if Model3D.isPreviewable(file) {
-                            Button("In Cura öffnen") { store.openInCura(file) }
-                                .buttonStyle(.link)
-                                .font(.callout)
-                        }
-                        Button("Zeigen") { store.revealInFinder(file) }
-                            .buttonStyle(.link)
-                            .font(.callout)
+                            .padding(.top, 4)
+                    }
+                    ForEach(group.files, id: \.self) { file in
+                        fileRow(file, indented: !group.directory.isEmpty)
                     }
                 }
-                Text("Tipp: Dateien lassen sich per Drag & Drop hierher kopieren.")
+                Text("Tipp: Klick auf ein 3D-Teil zeigt es in der Vorschau; Dateien lassen sich per Drag & Drop hierher kopieren.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private func fileRow(_ file: URL, indented: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon(for: file))
+                .foregroundStyle(isActivePreview(file) ? Color.accentColor : .secondary)
+                .frame(width: 18)
+            if Model3D.isPreviewable(file) {
+                Button {
+                    previewFile = file
+                } label: {
+                    Text(file.lastPathComponent)
+                        .fontWeight(isActivePreview(file) ? .semibold : .regular)
+                        .foregroundStyle(isActivePreview(file) ? Color.accentColor : .primary)
+                }
+                .buttonStyle(.plain)
+                .help("In der 3D-Vorschau anzeigen")
+            } else {
+                Text(file.lastPathComponent)
+            }
+            Spacer()
+            if Model3D.isPreviewable(file) {
+                Button("In Cura öffnen") { store.openInCura(file) }
+                    .buttonStyle(.link)
+                    .font(.callout)
+            }
+            if Model3D.isImage(file) {
+                let isCurrent = model.frontmatter.string("vorschaubild") == model.relativePath(of: file)
+                Button(isCurrent ? "✓ Vorschaubild" : "Als Vorschaubild") {
+                    var m = appliedModel
+                    m.frontmatter.setString("vorschaubild", isCurrent ? "" : model.relativePath(of: file))
+                    store.save(m)
+                }
+                .buttonStyle(.link)
+                .font(.callout)
+                .help(isCurrent
+                    ? "Wieder das gerenderte 3D-Thumbnail verwenden"
+                    : "Dieses Bild in der Übersicht als Vorschaubild zeigen")
+            }
+            Button("Zeigen") { store.revealInFinder(file) }
+                .buttonStyle(.link)
+                .font(.callout)
+        }
+        .padding(.leading, indented ? 16 : 0)
+        .onHover { hovering in
+            guard Model3D.isImage(file) else { return }
+            if hovering {
+                hoverPreviewFile = file
+            } else if hoverPreviewFile == file {
+                hoverPreviewFile = nil
+            }
+        }
+        .popover(
+            isPresented: Binding(
+                get: { hoverPreviewFile == file },
+                set: { shown in if !shown, hoverPreviewFile == file { hoverPreviewFile = nil } }
+            ),
+            arrowEdge: .trailing
+        ) {
+            ImageHoverPreview(url: file)
+        }
+    }
+
+    private struct ImageHoverPreview: View {
+        let url: URL
+        @State private var image: NSImage?
+
+        var body: some View {
+            Group {
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    ProgressView()
+                        .frame(width: 120, height: 120)
+                }
+            }
+            .frame(maxWidth: 360, maxHeight: 360)
+            .padding(8)
+            .task {
+                image = await ThumbnailProvider.shared.imagePreview(for: url)
             }
         }
     }

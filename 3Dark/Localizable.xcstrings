@@ -1,0 +1,249 @@
+{
+  "sourceLanguage" : "de",
+  "strings" : {
+    "Alle Modelle" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "All Models" } } }
+    },
+    "Alle Teile" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "All Parts" } } }
+    },
+    "Alle Teile gemeinsam anzeigen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Show all parts together" } } }
+    },
+    "Als Vorschaubild" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Use as Thumbnail" } } }
+    },
+    "✓ Vorschaubild" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "✓ Thumbnail" } } }
+    },
+    "Abbrechen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } } }
+    },
+    "Angezeigte 3D-Datei an Cura übergeben" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Send the displayed 3D file to Cura" } } }
+    },
+    "Anlegen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Create" } } }
+    },
+    "Ansicht" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "View" } } }
+    },
+    "Ansicht zurücksetzen (zentrieren und zurückdrehen)" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset view (center and rotate back)" } } }
+    },
+    "Archiv-Ordner wählen …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose Archive Folder…" } } }
+    },
+    "Autor" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Author" } } }
+    },
+    "Bearbeiten" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit" } } }
+    },
+    "Beschreibung & Druckhinweise" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Description & Print Notes" } } }
+    },
+    "Bewertung" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Rating" } } }
+    },
+    "Dateien" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Files" } } }
+    },
+    "Deutsch" : {
+      "shouldTranslate" : false
+    },
+    "Dieses Bild in der Übersicht als Vorschaubild zeigen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Show this image as the thumbnail in the overview" } } }
+    },
+    "Dunkel" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } } }
+    },
+    "Düse" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Nozzle" } } }
+    },
+    "Entfernen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove" } } }
+    },
+    "Erscheinungsbild:" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Appearance:" } } }
+    },
+    "Es wird ein Ordner mit einer model.md im Archiv erstellt." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "A folder with a model.md will be created in the archive." } } }
+    },
+    "Fehler" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Error" } } }
+    },
+    "Gedruckt am" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Printed on" } } }
+    },
+    "Gesamtansicht · %lld Teile" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Overview · %lld parts" } } }
+    },
+    "Gilt für die Oberfläche der App." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Applies to the app’s interface." } } }
+    },
+    "Hell" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Light" } } }
+    },
+    "Hinzufügen …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add…" } } }
+    },
+    "Im Finder zeigen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Show in Finder" } } }
+    },
+    "Importieren" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Import" } } }
+    },
+    "In Cura öffnen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Open in Cura" } } }
+    },
+    "In der 3D-Vorschau anzeigen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Show in the 3D preview" } } }
+    },
+    "ja / nein" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "yes / no" } } }
+    },
+    "JJJJ-MM-TT" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "YYYY-MM-DD" } } }
+    },
+    "Kein Modell ausgewählt" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No Model Selected" } } }
+    },
+    "Keine 3D-Datei" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No 3D File" } } }
+    },
+    "Keine Modelle" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No Models" } } }
+    },
+    "Lege eine STL- oder 3MF-Datei in den Modellordner." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Place an STL or 3MF file in the model folder." } } }
+    },
+    "Lege mit + ein neues Modell an, importiere ZIPs/Ordner per Drag & Drop oder passe die Filter an." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Create a new model with +, import ZIPs/folders via drag & drop, or adjust the filters." } } }
+    },
+    "Liste" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "List" } } }
+    },
+    "Lizenz" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "License" } } }
+    },
+    "Material" : {
+      "shouldTranslate" : false
+    },
+    "Modellordner im Finder zeigen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Show model folder in Finder" } } }
+    },
+    "Name des Modells" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Model name" } } }
+    },
+    "Neues Modell" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "New Model" } } }
+    },
+    "Neues Modell anlegen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Create New Model" } } }
+    },
+    "Noch keine Dateien – zieh STL/3MF-Dateien einfach hierher oder in den Ordner im Finder." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No files yet – just drag STL/3MF files here or into the folder in Finder." } } }
+    },
+    "Noch keine Tags" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No tags yet" } } }
+    },
+    "ODER – ein Tag genügt" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "OR – any tag matches" } } }
+    },
+    "OK" : {
+      "shouldTranslate" : false
+    },
+    "Ordner wechseln …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Change Folder…" } } }
+    },
+    "Quelle" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Source" } } }
+    },
+    "Raster" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Grid" } } }
+    },
+    "Sammlung hinzufügen …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add collection…" } } }
+    },
+    "Sammlungen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Collections" } } }
+    },
+    "Schichthöhe" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Layer height" } } }
+    },
+    "Speichern" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Save" } } }
+    },
+    "Sprache:" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Language:" } } }
+    },
+    "Stützen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Supports" } } }
+    },
+    "System" : {
+      "shouldTranslate" : false
+    },
+    "Tag hinzufügen …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add tag…" } } }
+    },
+    "Tags" : {
+      "shouldTranslate" : false
+    },
+    "Tipp: Klick auf ein 3D-Teil zeigt es in der Vorschau; Dateien lassen sich per Drag & Drop hierher kopieren." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Tip: Click a 3D part to show it in the preview; files can be copied here via drag & drop." } } }
+    },
+    "Titel" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Title" } } }
+    },
+    "Titel, Tags, Beschreibung …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Title, tags, description…" } } }
+    },
+    "UND – alle Tags" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "AND – all tags" } } }
+    },
+    "und mehr" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "and up" } } }
+    },
+    "Verknüpfung" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Combination" } } }
+    },
+    "Vorhandenen Wert auswählen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose an existing value" } } }
+    },
+    "Vorschau" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Preview" } } }
+    },
+    "Vorschau nicht möglich" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Preview Not Available" } } }
+    },
+    "Wieder das gerenderte 3D-Thumbnail verwenden" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the rendered 3D thumbnail again" } } }
+    },
+    "Willkommen bei 3Dark" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Welcome to 3Dark" } } }
+    },
+    "Wähle den Ordner, in dem deine 3D-Modelle liegen sollen.\nJedes Modell bekommt darin einen eigenen Unterordner mit einer model.md." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose the folder where your 3D models should live.\nEach model gets its own subfolder with a model.md." } } }
+    },
+    "Wähle ein Modell aus oder lege mit + ein neues an." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Select a model or create a new one with +." } } }
+    },
+    "Zeigen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Show" } } }
+    },
+    "ZIP-Dateien oder Ordner als neue Modelle importieren" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Import ZIP files or folders as new models" } } }
+    },
+    "Zwischen Raster- und Listenansicht umschalten" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Switch between grid and list view" } } }
+    },
+    "Änderungen in model.md speichern (⌘S)" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Save changes to model.md (⌘S)" } } }
+    },
+    "„System“ folgt automatisch der macOS-Einstellung." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "“System” automatically follows the macOS setting." } } }
+    }
+  },
+  "version" : "1.0"
+}

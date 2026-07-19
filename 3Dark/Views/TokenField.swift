@@ -8,7 +8,7 @@ import SwiftUI
 struct TokenField: View {
     @Binding var tokens: [String]
     var suggestions: [String]
-    var placeholder = "Hinzufügen …"
+    var placeholder: LocalizedStringKey = "Hinzufügen …"
     var accent: Color = .accentColor
     var icon = "tag"
     /// Wird nach jeder Änderung an den Chips aufgerufen (z. B. zum Speichern).
