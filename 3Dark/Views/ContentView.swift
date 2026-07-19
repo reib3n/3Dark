@@ -10,6 +10,14 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var selectedModelID: Model3D.ID?
     @State private var showingNewModelSheet = false
+    @State private var showingTrash = false
+
+    private var displayedModels: [Model3D] {
+        if showingTrash {
+            return store.trashedModels.filter { searchText.isEmpty || $0.matches(search: searchText) }
+        }
+        return filteredModels
+    }
 
     private var filteredModels: [Model3D] {
         store.models.filter { model in
@@ -44,18 +52,20 @@ struct ContentView: View {
                         selectedTags: $selectedTags,
                         selectedCollection: $selectedCollection,
                         matchAll: $matchAll,
-                        minRating: $minRating
+                        minRating: $minRating,
+                        showingTrash: $showingTrash
                     )
                     .navigationSplitViewColumnWidth(min: 180, ideal: 230)
                 } content: {
                     ModelBrowserView(
-                        models: filteredModels,
+                        models: displayedModels,
                         selectedID: $selectedModelID,
+                        isTrash: showingTrash,
                         onNewModel: { showingNewModelSheet = true }
                     )
                     .navigationSplitViewColumnWidth(min: 280, ideal: 440)
                 } detail: {
-                    if let model = store.models.first(where: { $0.id == selectedModelID }) {
+                    if let model = (store.models + store.trashedModels).first(where: { $0.id == selectedModelID }) {
                         ModelDetailView(model: model)
                             .id(model.id)
                     } else {

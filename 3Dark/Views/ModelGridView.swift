@@ -10,9 +10,11 @@ struct ModelBrowserView: View {
     @EnvironmentObject private var store: ArchiveStore
     let models: [Model3D]
     @Binding var selectedID: Model3D.ID?
+    var isTrash = false
     var onNewModel: () -> Void
 
     @AppStorage("ModelViewMode") private var viewModeRaw = ModelViewMode.grid.rawValue
+    @State private var pendingPermanentDelete: Model3D?
 
     private var viewMode: ModelViewMode {
         ModelViewMode(rawValue: viewModeRaw) ?? .grid
@@ -25,7 +27,7 @@ struct ModelBrowserView: View {
             case .list: listView
             }
         }
-        .navigationTitle("3Dark")
+        .navigationTitle(isTrash ? String(localized: "Trash") : "3Dark")
         .toolbar {
             ToolbarItemGroup {
                 Picker("View", selection: $viewModeRaw) {
@@ -37,35 +39,87 @@ struct ModelBrowserView: View {
                 .pickerStyle(.segmented)
                 .help("Switch between grid and list view")
 
-                Button {
-                    pickAndImport()
-                } label: {
-                    Label("Import", systemImage: "square.and.arrow.down")
-                }
-                .help("Import ZIP files or folders as new models")
+                if !isTrash {
+                    Button {
+                        pickAndImport()
+                    } label: {
+                        Label("Import", systemImage: "square.and.arrow.down")
+                    }
+                    .help("Import ZIP files or folders as new models")
 
-                Button {
-                    onNewModel()
-                } label: {
-                    Label("New Model", systemImage: "plus")
+                    Button {
+                        onNewModel()
+                    } label: {
+                        Label("New Model", systemImage: "plus")
+                    }
+                    .help("Create New Model")
                 }
-                .help("Create New Model")
             }
         }
         .overlay {
             if models.isEmpty {
-                ContentUnavailableView(
-                    "No Models",
-                    systemImage: "cube",
-                    description: Text("Create a new model with +, import ZIPs/folders via drag & drop, or adjust the filters.")
-                )
+                if isTrash {
+                    ContentUnavailableView(
+                        "Trash is empty",
+                        systemImage: "trash",
+                        description: Text("Deleted models land here first and can be restored.")
+                    )
+                } else {
+                    ContentUnavailableView(
+                        "No Models",
+                        systemImage: "cube",
+                        description: Text("Create a new model with +, import ZIPs/folders via drag & drop, or adjust the filters.")
+                    )
+                }
             }
         }
         .dropDestination(for: URL.self) { urls, _ in
+            guard !isTrash else { return false }
             let fileURLs = urls.filter { $0.isFileURL }
             guard !fileURLs.isEmpty else { return false }
             importAndSelect(fileURLs)
             return true
+        }
+        .alert(
+            "Delete Permanently?",
+            isPresented: Binding(
+                get: { pendingPermanentDelete != nil },
+                set: { if !$0 { pendingPermanentDelete = nil } }
+            )
+        ) {
+            Button("Delete Permanently", role: .destructive) {
+                if let model = pendingPermanentDelete {
+                    store.deletePermanently(model)
+                }
+                pendingPermanentDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                pendingPermanentDelete = nil
+            }
+        } message: {
+            Text("“\(pendingPermanentDelete?.title ?? "")” will be moved to the macOS Trash.")
+        }
+    }
+
+    @ViewBuilder
+    private func contextMenu(for model: Model3D) -> some View {
+        if isTrash {
+            Button {
+                store.restore(model)
+            } label: {
+                Label("Restore", systemImage: "arrow.uturn.backward")
+            }
+            Button(role: .destructive) {
+                pendingPermanentDelete = model
+            } label: {
+                Label("Delete Permanently", systemImage: "trash.slash")
+            }
+        } else {
+            Button(role: .destructive) {
+                store.moveToTrash(model)
+            } label: {
+                Label("Move to Trash", systemImage: "trash")
+            }
         }
     }
 
@@ -78,6 +132,7 @@ struct ModelBrowserView: View {
                 ForEach(models) { model in
                     ModelGridCell(model: model, isSelected: model.id == selectedID)
                         .onTapGesture { selectedID = model.id }
+                        .contextMenu { contextMenu(for: model) }
                 }
             }
             .padding()
@@ -89,6 +144,7 @@ struct ModelBrowserView: View {
             ForEach(models) { model in
                 ModelListRow(model: model)
                     .tag(model.id)
+                    .contextMenu { contextMenu(for: model) }
             }
         }
         .listStyle(.inset)

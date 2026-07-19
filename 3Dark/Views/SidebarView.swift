@@ -6,6 +6,7 @@ struct SidebarView: View {
     @Binding var selectedCollection: String?
     @Binding var matchAll: Bool
     @Binding var minRating: Int
+    @Binding var showingTrash: Bool
 
     var body: some View {
         List {
@@ -14,6 +15,7 @@ struct SidebarView: View {
                     selectedTags.removeAll()
                     selectedCollection = nil
                     minRating = 0
+                    showingTrash = false
                 } label: {
                     HStack {
                         Label("All Models", systemImage: "square.grid.2x2")
@@ -94,6 +96,23 @@ struct SidebarView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+
+            Section {
+                Button {
+                    showingTrash.toggle()
+                } label: {
+                    HStack {
+                        Label("Trash", systemImage: showingTrash ? "trash.fill" : "trash")
+                            .foregroundStyle(showingTrash ? Color.accentColor : .primary)
+                        Spacer()
+                        Text("\(store.trashedModels.count)")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+                .buttonStyle(.plain)
+                .help("Show deleted models")
             }
 
             if selectedTags.count > 1 {

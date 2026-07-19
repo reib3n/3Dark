@@ -36,6 +36,63 @@
     "Add…" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Hinzufügen …" } } }
     },
+    "A key is stored in your keychain." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ein Key ist in deinem Schlüsselbund gespeichert." } } }
+    },
+    "Accept" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Übernehmen" } } }
+    },
+    "AI" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "KI" } } }
+    },
+    "AI Enrichment" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "KI-Ergänzung" } } }
+    },
+    "Anthropic API Key:" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Anthropic API-Key:" } } }
+    },
+    "Could not load the source page: %@" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die Quellseite konnte nicht geladen werden: %@" } } }
+    },
+    "Dismiss" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Verwerfen" } } }
+    },
+    "Dismiss all" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle verwerfen" } } }
+    },
+    "Enrich with AI" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Mit KI ergänzen" } } }
+    },
+    "Enrichment loads the model’s source page and sends its text to the Claude API to fill missing fields. Your 3D files never leave your Mac." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die Ergänzung lädt die Quellseite des Modells und schickt deren Text an die Claude API, um fehlende Felder vorzuschlagen. Deine 3D-Dateien verlassen deinen Mac nie." } } }
+    },
+    "Fetches the source page and suggests values for missing fields" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Lädt die Quellseite und schlägt Werte für fehlende Felder vor" } } }
+    },
+    "General" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Allgemein" } } }
+    },
+    "No API key set. Add one in Settings." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kein API-Key hinterlegt. Trage ihn in den Einstellungen ein." } } }
+    },
+    "No key stored." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kein Key gespeichert." } } }
+    },
+    "No new suggestions found." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine neuen Vorschläge gefunden." } } }
+    },
+    "No source link set." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kein Quell-Link hinterlegt." } } }
+    },
+    "Remove Key" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Key entfernen" } } }
+    },
+    "Save Key" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Key speichern" } } }
+    },
+    "The AI request failed: %@" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die KI-Anfrage ist fehlgeschlagen: %@" } } }
+    },
     "All Models" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle Modelle" } } }
     },
@@ -87,6 +144,39 @@
     },
     "Could not copy %@: %@" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ konnte nicht kopiert werden: %2$@" } } }
+    },
+    "“%@” will be moved to the macOS Trash." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "„%@“ wird in den macOS-Papierkorb gelegt." } } }
+    },
+    "Could not delete model: %@" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Modell konnte nicht gelöscht werden: %@" } } }
+    },
+    "Could not move model: %@" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Modell konnte nicht verschoben werden: %@" } } }
+    },
+    "Delete Permanently" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Endgültig löschen" } } }
+    },
+    "Delete Permanently?" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Endgültig löschen?" } } }
+    },
+    "Deleted models land here first and can be restored." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gelöschte Modelle landen zuerst hier und lassen sich wiederherstellen." } } }
+    },
+    "Move to Trash" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "In den Papierkorb legen" } } }
+    },
+    "Restore" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Wiederherstellen" } } }
+    },
+    "Show deleted models" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gelöschte Modelle anzeigen" } } }
+    },
+    "Trash" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Papierkorb" } } }
+    },
+    "Trash is empty" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Papierkorb ist leer" } } }
     },
     "Could not create model: %@" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Modell konnte nicht angelegt werden: %@" } } }

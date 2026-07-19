@@ -136,6 +136,39 @@ copy — no duplicated content. If the import ships a model.md, it serves
 as the base (migration between archives). The source outside the archive
 stays untouched.
 
+Stage-1 metadata extraction runs during import: empty `source`,
+`license`, `author`, and `title` fields are filled from bundled
+readme/license text files using deterministic patterns only — portal
+URLs (Printables, Thingiverse, MakerWorld, …), Creative Commons/MIT
+identifiers, and labeled readme lines ("Author:", "Designer:", the
+Thingiverse "… by … on Thingiverse" headline). Bundled PDF description
+documents are analyzed as well (text extraction via PDFKit); the PDFs
+themselves stay as files. Existing values are never overwritten, and
+print settings (material, supports, …) are deliberately not guessed from
+free text — a wrong value would poison the filters.
+
+**AI enrichment (opt-in):** for models with a `source` link, a toolbar
+action fetches the source page and fills missing fields. The pipeline is
+deterministic-first: embedded JSON-LD (portal pages) is parsed exactly;
+only the remainder goes to the Claude API (`claude-haiku-4-5`, structured
+output against a strict JSON schema, raw HTTP — there is no official
+Swift SDK). Every value is hard-validated (license against known
+identifiers, plausible number ranges, yes/no normalization) — anything
+failing validation is dropped, never repaired. Results are stored as
+`ai_*` front matter fields (`ai_material`, `ai_tags`, `ai_updated`, …),
+so they can never collide with canonical fields; the UI shows them as
+✨-marked suggestions with per-value Accept/Dismiss, and AI tags do not
+participate in filtering until accepted. The API key lives in the macOS
+keychain (Settings → AI); without a key the feature stays inert. Only
+the source URL, page text, and the names of missing fields leave the
+machine — never 3D files.
+
+**Trash:** deleting a model moves its folder into `deleted/` inside the
+archive root (excluded from the model list). The sidebar's trash entry
+shows the deleted models; they can be restored (moved back) or deleted
+permanently — the latter hands the folder to the macOS Trash as a final
+safety net (with confirmation).
+
 ## Technology
 
 - Swift 5.x, SwiftUI, deployment target macOS 14+; on macOS 26 with

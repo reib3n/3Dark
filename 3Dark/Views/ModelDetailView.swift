@@ -21,6 +21,9 @@ struct ModelDetailView: View {
     @State private var showMarkdownPreview = false
     @State private var previewFile: URL?
     @State private var hoverPreviewFile: URL?
+    @State private var showingDeleteConfirmation = false
+    @State private var isEnriching = false
+    @State private var enrichmentMessage: String?
 
     init(model: Model3D) {
         self.model = model
@@ -109,9 +112,68 @@ struct ModelDetailView: View {
                 .help("Save changes to model.md (⌘S)")
                 .keyboardShortcut("s", modifiers: .command)
                 .disabled(!isDirty)
+
+                if isEnriching {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Button {
+                        enrich()
+                    } label: {
+                        Label("Enrich with AI", systemImage: "sparkles")
+                    }
+                    .help("Fetches the source page and suggests values for missing fields")
+                    .disabled(source.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+
+                if isTrashed {
+                    Button {
+                        store.restore(model)
+                    } label: {
+                        Label("Restore", systemImage: "arrow.uturn.backward")
+                    }
+                    .help("Restore")
+
+                    Button {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete Permanently", systemImage: "trash.slash")
+                    }
+                    .help("Delete Permanently")
+                } else {
+                    Button {
+                        store.moveToTrash(model)
+                    } label: {
+                        Label("Move to Trash", systemImage: "trash")
+                    }
+                    .help("Move to Trash")
+                }
             }
         }
+        .alert(
+            "AI Enrichment",
+            isPresented: Binding(
+                get: { enrichmentMessage != nil },
+                set: { if !$0 { enrichmentMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(enrichmentMessage ?? "")
+        }
+        .alert("Delete Permanently?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete Permanently", role: .destructive) {
+                store.deletePermanently(model)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("“\(model.title)” will be moved to the macOS Trash.")
+        }
         .navigationTitle(title)
+    }
+
+    private var isTrashed: Bool {
+        store.trashedModels.contains { $0.id == model.id }
     }
 
     // MARK: - Metadata
@@ -148,9 +210,13 @@ struct ModelDetailView: View {
                 )
                 .frame(maxWidth: 420, alignment: .leading)
             }
+            aiTagsRow
+
             field("Source", text: $source, prompt: "https://…")
             field("Author", text: $author)
+            aiRow("author", text: $author)
             field("License", text: $license, prompt: "CC BY 4.0")
+            aiRow("license", text: $license)
 
             GridRow {
                 Text("")
@@ -158,9 +224,13 @@ struct ModelDetailView: View {
             }
 
             field("Material", text: $material, prompt: "PLA")
+            aiRow("material", text: $material)
             field("Nozzle", text: $nozzle, prompt: "0.4")
+            aiRow("nozzle", text: $nozzle)
             field("Layer height", text: $layerHeight, prompt: "0.2")
+            aiRow("layer_height", text: $layerHeight)
             field("Supports", text: $supports, prompt: "yes / no")
+            aiRow("supports", text: $supports)
             field("Printed on", text: $printed, prompt: "YYYY-MM-DD")
 
             GridRow {
@@ -196,6 +266,109 @@ struct ModelDetailView: View {
     /// Writes the current form state to model.md.
     private func save() {
         store.save(appliedModel)
+    }
+
+    // MARK: - AI enrichment
+
+    private func enrich() {
+        guard AIEnrichmentService.hasAPIKey else {
+            enrichmentMessage = String(localized: "No API key set. Add one in Settings.")
+            return
+        }
+        isEnriching = true
+        // Save first so the enrichment sees the current form state.
+        let current = appliedModel
+        store.save(current)
+        Task {
+            defer { isEnriching = false }
+            do {
+                let suggestions = try await AIEnrichmentService.shared.enrich(model: current)
+                let changed = store.applyAISuggestions(suggestions, to: current)
+                if !changed {
+                    enrichmentMessage = String(localized: "No new suggestions found.")
+                }
+            } catch {
+                enrichmentMessage = error.localizedDescription
+            }
+        }
+    }
+
+    /// Suggestion row below a field: shown while the canonical field is
+    /// empty and an `ai_<key>` value exists.
+    @ViewBuilder
+    private func aiRow(_ key: String, text: Binding<String>) -> some View {
+        let suggestion = model.aiSuggestion(key)
+        if !suggestion.isEmpty, text.wrappedValue.trimmingCharacters(in: .whitespaces).isEmpty {
+            GridRow {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(.orange)
+                    .gridColumnAlignment(.trailing)
+                HStack(spacing: 10) {
+                    Text(suggestion)
+                        .foregroundStyle(.secondary)
+                        .italic()
+                    Button("Accept") {
+                        text.wrappedValue = suggestion
+                        var m = appliedModel
+                        m.frontmatter["ai_" + key] = nil
+                        store.save(m)
+                    }
+                    .buttonStyle(.link)
+                    .font(.callout)
+                    Button("Dismiss") {
+                        var m = appliedModel
+                        m.frontmatter["ai_" + key] = nil
+                        store.save(m)
+                    }
+                    .buttonStyle(.link)
+                    .font(.callout)
+                }
+            }
+        }
+    }
+
+    /// Suggested tags below the tag field, each addable with one click.
+    @ViewBuilder
+    private var aiTagsRow: some View {
+        let remaining = model.aiTags.filter { !tagList.contains($0) }
+        if !remaining.isEmpty {
+            GridRow {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(.orange)
+                    .gridColumnAlignment(.trailing)
+                HStack(spacing: 6) {
+                    ForEach(remaining, id: \.self) { tag in
+                        Button {
+                            acceptAITag(tag)
+                        } label: {
+                            Label(tag, systemImage: "plus")
+                                .font(.callout)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Capsule().fill(Color.orange.opacity(0.14)))
+                                .overlay(Capsule().strokeBorder(Color.orange.opacity(0.4)))
+                        }
+                        .buttonStyle(.plain)
+                        .help("Accept")
+                    }
+                    Button("Dismiss all") {
+                        var m = appliedModel
+                        m.frontmatter["ai_tags"] = nil
+                        store.save(m)
+                    }
+                    .buttonStyle(.link)
+                    .font(.callout)
+                }
+            }
+        }
+    }
+
+    private func acceptAITag(_ tag: String) {
+        tagList.append(tag)
+        var m = appliedModel
+        let remaining = model.aiTags.filter { $0 != tag && !tagList.contains($0) }
+        m.frontmatter.setList("ai_tags", remaining)
+        store.save(m)
     }
 
     // MARK: - Markdown

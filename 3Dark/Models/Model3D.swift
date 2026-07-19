@@ -56,6 +56,14 @@ struct Model3D: Identifiable, Equatable, Hashable {
         file.path.replacingOccurrences(of: folderURL.path + "/", with: "")
     }
 
+    /// AI-suggested value for a canonical field (front matter `ai_<key>`).
+    func aiSuggestion(_ key: String) -> String {
+        frontmatter.string("ai_" + key)
+    }
+
+    /// AI-suggested tags (front matter `ai_tags`).
+    var aiTags: [String] { frontmatter.list("ai_tags") }
+
     var markdownURL: URL { folderURL.appendingPathComponent("model.md") }
     var thumbnailURL: URL { folderURL.appendingPathComponent(".thumbnail.png") }
 

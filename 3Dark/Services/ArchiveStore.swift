@@ -9,8 +9,12 @@ import SwiftUI
 @MainActor
 final class ArchiveStore: ObservableObject {
     @Published private(set) var models: [Model3D] = []
+    @Published private(set) var trashedModels: [Model3D] = []
     @Published private(set) var rootURL: URL?
     @Published var errorMessage: String?
+
+    /// Folder inside the archive root where deleted models are parked.
+    static let trashFolderName = "deleted"
 
     private var watcher: FolderWatcher?
     private var pollTimer: Timer?
@@ -75,6 +79,7 @@ final class ArchiveStore: ObservableObject {
 
         let loaded = contents
             .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
+            .filter { $0.lastPathComponent != Self.trashFolderName }
             .map { loadModel(at: $0) }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
 
@@ -82,6 +87,20 @@ final class ArchiveStore: ObservableObject {
         // does not needlessly touch the UI.
         if loaded != models {
             models = loaded
+        }
+
+        let trashURL = rootURL.appendingPathComponent(Self.trashFolderName, isDirectory: true)
+        let trashContents = (try? fileManager.contentsOfDirectory(
+            at: trashURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        let trashed = trashContents
+            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
+            .map { loadModel(at: $0) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        if trashed != trashedModels {
+            trashedModels = trashed
         }
     }
 
@@ -216,6 +235,79 @@ final class ArchiveStore: ObservableObject {
             }
         }
         reload()
+    }
+
+    // MARK: - AI enrichment
+
+    /// Writes AI suggestions into `ai_*` front matter fields — only where
+    /// the canonical field is still empty; existing values are never
+    /// touched. Returns whether anything new was stored.
+    @discardableResult
+    func applyAISuggestions(_ suggestions: AISuggestions, to model: Model3D) -> Bool {
+        var m = model
+        var changed = false
+        for (key, value) in suggestions.fields where m.frontmatter.string(key).isEmpty {
+            if m.frontmatter.string("ai_" + key) != value {
+                m.frontmatter.setString("ai_" + key, value)
+                changed = true
+            }
+        }
+        let newTags = suggestions.tags.filter { !m.tags.contains($0) }
+        if !newTags.isEmpty, Set(newTags) != Set(m.aiTags) {
+            m.frontmatter.setList("ai_tags", newTags)
+            changed = true
+        }
+        if changed {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withFullDate]
+            m.frontmatter.setString("ai_updated", formatter.string(from: Date()))
+            save(m)
+        }
+        return changed
+    }
+
+    // MARK: - Trash
+
+    /// Moves a model into the `deleted/` folder inside the archive root.
+    func moveToTrash(_ model: Model3D) {
+        guard let rootURL else { return }
+        let trashURL = rootURL.appendingPathComponent(Self.trashFolderName, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: trashURL, withIntermediateDirectories: true)
+            let target = ModelImporter.uniqueFolderURL(for: model.folderURL.lastPathComponent, in: trashURL)
+            try FileManager.default.moveItem(at: model.folderURL, to: target)
+            reload()
+        } catch {
+            errorMessage = String(localized: "Could not move model: \(error.localizedDescription)")
+        }
+    }
+
+    /// Moves a trashed model back into the archive root.
+    func restore(_ model: Model3D) {
+        guard let rootURL else { return }
+        do {
+            let target = ModelImporter.uniqueFolderURL(for: model.folderURL.lastPathComponent, in: rootURL)
+            try FileManager.default.moveItem(at: model.folderURL, to: target)
+            reload()
+        } catch {
+            errorMessage = String(localized: "Could not move model: \(error.localizedDescription)")
+        }
+    }
+
+    /// Removes a trashed model from the archive; the folder goes to the
+    /// macOS Trash when possible (extra safety net), otherwise it is
+    /// deleted outright (e.g. network volumes without a trash).
+    func deletePermanently(_ model: Model3D) {
+        do {
+            do {
+                try FileManager.default.trashItem(at: model.folderURL, resultingItemURL: nil)
+            } catch {
+                try FileManager.default.removeItem(at: model.folderURL)
+            }
+            reload()
+        } catch {
+            errorMessage = String(localized: "Could not delete model: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Tags & collections

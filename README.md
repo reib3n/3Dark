@@ -23,7 +23,15 @@ with git. See [CONCEPT.md](CONCEPT.md) for the full design.
 - **Grid and list view** — switchable, remembered across launches
 - **Import** — drop ZIPs or folders onto the app; contained text files
   are folded into the model.md in hierarchy order, redundant copies are
-  cleaned up, sources stay untouched
+  cleaned up, sources stay untouched; source link, license, author, and
+  title are extracted automatically from bundled readme and PDF files
+  (deterministic patterns, empty fields only)
+- **Trash** — deleted models move to a `deleted/` folder inside the
+  archive and can be restored or removed for good from the trash view
+- **AI enrichment (opt-in)** — with an Anthropic API key (Settings → AI),
+  one click fetches a model's source page and suggests missing metadata;
+  suggestions are stored as separate `ai_*` fields, marked with ✨ in the
+  UI, and never overwrite your data until you accept them
 - **Cura hand-off** — send any 3D file to UltiMaker Cura with one click
 - **Localized** — English and German, switchable in Settings (⌘,),
   light/dark/system appearance; Liquid Glass styling on macOS 26

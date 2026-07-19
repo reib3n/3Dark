@@ -1,4 +1,5 @@
 import Foundation
+import PDFKit
 
 enum ImportError: LocalizedError {
     case sourceMissing(String)
@@ -24,6 +25,8 @@ enum ModelImporter {
     static let textExtensions: Set<String> = ["txt", "md", "markdown", "text"]
     /// Larger text files are not inlined (they remain as files).
     static let maxInlineTextBytes = 512 * 1024
+    /// Cap for text pulled out of a single PDF for metadata extraction.
+    static let maxPDFExtractionChars = 20_000
 
     struct ImportResult {
         let folderURL: URL
@@ -138,11 +141,10 @@ enum ModelImporter {
             let body = parsed.body.trimmingCharacters(in: .whitespacesAndNewlines)
             if !body.isEmpty { bodyParts.append(body) }
         }
-        if frontmatter["title"] == nil { frontmatter.setString("title", title) }
-        if frontmatter["tags"] == nil { frontmatter.tags = [] }
-
-        // Collect text files in folder-hierarchy order.
+        // Collect text files in folder-hierarchy order; PDFs are noted
+        // separately for metadata extraction (they stay as files).
         var textFiles: [(relative: String, url: URL)] = []
+        var pdfFiles: [URL] = []
         if let enumerator = fileManager.enumerator(
             at: folder,
             includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey],
@@ -150,7 +152,12 @@ enum ModelImporter {
         ) {
             for case let url as URL in enumerator {
                 guard (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory != true else { continue }
-                guard textExtensions.contains(url.pathExtension.lowercased()) else { continue }
+                let ext = url.pathExtension.lowercased()
+                if ext == "pdf" {
+                    pdfFiles.append(url)
+                    continue
+                }
+                guard textExtensions.contains(ext) else { continue }
                 let relative = url.path.replacingOccurrences(of: folder.path + "/", with: "")
                 guard relative != "model.md" else { continue }
                 textFiles.append((relative, url))
@@ -160,14 +167,43 @@ enum ModelImporter {
 
         var inlined: [String] = []
         var skipped: [String] = []
+        var extractionText = ""
         for (relative, url) in textFiles {
             let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             guard size <= maxInlineTextBytes, let content = readText(url) else {
                 skipped.append(relative)
                 continue
             }
+            if extractionText.count < 200_000 {
+                extractionText += content + "\n"
+            }
             bodyParts.append("## \(relative)\n\n" + content.trimmingCharacters(in: .whitespacesAndNewlines))
             inlined.append(relative)
+        }
+
+        // Bundled PDFs (description documents) feed the metadata
+        // extraction too, but are neither inlined nor removed.
+        for pdf in pdfFiles.sorted(by: { $0.path < $1.path }) where extractionText.count < 200_000 {
+            if let document = PDFDocument(url: pdf), let content = document.string {
+                extractionText += String(content.prefix(maxPDFExtractionChars)) + "\n"
+            }
+        }
+
+        // Stage-1 metadata extraction: fill empty fields from bundled
+        // readme/license texts — never overwrite existing values.
+        let extracted = MetadataExtractor.extract(from: extractionText)
+        if frontmatter["title"] == nil {
+            frontmatter.setString("title", extracted.title ?? title)
+        }
+        if frontmatter["tags"] == nil { frontmatter.tags = [] }
+        if frontmatter["source"] == nil, let source = extracted.source {
+            frontmatter.setString("source", source)
+        }
+        if frontmatter["author"] == nil, let author = extracted.author {
+            frontmatter.setString("author", author)
+        }
+        if frontmatter["license"] == nil, let license = extracted.license {
+            frontmatter.setString("license", license)
         }
 
         if bodyParts.isEmpty {
