@@ -60,6 +60,39 @@
     "Dismiss all" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle verwerfen" } } }
     },
+    "%lld models have a source link and missing fields. One request per model is sent to the Claude API." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Modelle haben einen Quell-Link und fehlende Felder. Pro Modell wird eine Anfrage an die Claude API gesendet." } } }
+    },
+    "Done" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Fertig" } } }
+    },
+    "Enrich All with AI" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle mit KI ergänzen" } } }
+    },
+    "Enriching %lld of %lld…" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ergänze %1$lld von %2$lld …" } } }
+    },
+    "Failed: %lld" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Fehlgeschlagen: %lld" } } }
+    },
+    "No new suggestions: %lld" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine neuen Vorschläge: %lld" } } }
+    },
+    "Nothing to enrich — every model either has no source link or no missing fields." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nichts zu ergänzen — jedes Modell hat entweder keinen Quell-Link oder keine fehlenden Felder." } } }
+    },
+    "Run canceled." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Lauf abgebrochen." } } }
+    },
+    "Start" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Starten" } } }
+    },
+    "Suggest missing metadata for all models with a source link" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Fehlende Metadaten für alle Modelle mit Quell-Link vorschlagen" } } }
+    },
+    "Suggestions found for %lld models." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Vorschläge für %lld Modelle gefunden." } } }
+    },
     "Enrich with AI" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Mit KI ergänzen" } } }
     },
@@ -89,6 +122,18 @@
     },
     "Save Key" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Key speichern" } } }
+    },
+    "Models already checked by AI are skipped. Use the ✨ button on a single model to check it again." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Bereits von der KI geprüfte Modelle werden übersprungen. Einzelne Modelle lassen sich über den ✨-Button erneut prüfen." } } }
+    },
+    "The file is not a readable Fusion 360 archive." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die Datei ist kein lesbares Fusion-360-Archiv." } } }
+    },
+    "The STEP file contains no readable geometry points." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die STEP-Datei enthält keine lesbaren Geometriepunkte." } } }
+    },
+    "This Fusion 360 archive contains no embedded preview image." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Dieses Fusion-360-Archiv enthält kein eingebettetes Vorschaubild." } } }
     },
     "The AI request failed: %@" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die KI-Anfrage ist fehlgeschlagen: %@" } } }

@@ -56,6 +56,24 @@ actor ThumbnailProvider {
     }
 
     private func render(source: URL, to output: URL) -> NSImage? {
+        // F3D: use the embedded preview image instead of rendering.
+        if source.pathExtension.lowercased() == "f3d" {
+            guard let image = try? F3DPreview.extractImage(from: source),
+                  let tiff = image.tiffRepresentation,
+                  let imageSource = CGImageSourceCreateWithData(tiff as CFData, nil),
+                  let cgImage = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, [
+                      kCGImageSourceCreateThumbnailFromImageAlways: true,
+                      kCGImageSourceThumbnailMaxPixelSize: 512,
+                  ] as CFDictionary) else {
+                return nil
+            }
+            let thumbnail = NSImage(cgImage: cgImage, size: .zero)
+            if let png = NSBitmapImageRep(cgImage: cgImage).representation(using: .png, properties: [:]) {
+                try? png.write(to: output)
+            }
+            return thumbnail
+        }
+
         guard let scene = try? GeometryLoader.loadScene(from: source) else { return nil }
 
         let renderer = SCNRenderer(device: MTLCreateSystemDefaultDevice(), options: nil)

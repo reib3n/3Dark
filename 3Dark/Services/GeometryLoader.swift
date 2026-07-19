@@ -64,6 +64,8 @@ enum GeometryLoader {
 
         if ext == "3mf" {
             modelNode = SCNNode(geometry: try ThreeMFParser.loadGeometry(from: url))
+        } else if ext == "step" || ext == "stp" {
+            modelNode = SCNNode(geometry: try STEPPointCloud.geometry(from: url))
         } else {
             let asset = MDLAsset(url: url)
             guard asset.count > 0 else {
@@ -76,12 +78,16 @@ enum GeometryLoader {
             }
         }
 
-        // STL/3MF/PLY from the printing world are Z-up, SceneKit is Y-up.
-        if ["stl", "3mf", "ply"].contains(ext) {
+        // STL/3MF/PLY/STEP from the printing/CAD world are Z-up,
+        // SceneKit is Y-up.
+        if ["stl", "3mf", "ply", "step", "stp"].contains(ext) {
             modelNode.eulerAngles.x = -.pi / 2
         }
 
-        applyPrintMaterial(to: modelNode)
+        // Point clouds keep their own constant-lit material.
+        if ext != "step", ext != "stp" {
+            applyPrintMaterial(to: modelNode)
+        }
         return modelNode
     }
 

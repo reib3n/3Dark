@@ -245,25 +245,25 @@ final class ArchiveStore: ObservableObject {
     @discardableResult
     func applyAISuggestions(_ suggestions: AISuggestions, to model: Model3D) -> Bool {
         var m = model
-        var changed = false
+        var foundSuggestions = false
         for (key, value) in suggestions.fields where m.frontmatter.string(key).isEmpty {
             if m.frontmatter.string("ai_" + key) != value {
                 m.frontmatter.setString("ai_" + key, value)
-                changed = true
+                foundSuggestions = true
             }
         }
         let newTags = suggestions.tags.filter { !m.tags.contains($0) }
         if !newTags.isEmpty, Set(newTags) != Set(m.aiTags) {
             m.frontmatter.setList("ai_tags", newTags)
-            changed = true
+            foundSuggestions = true
         }
-        if changed {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withFullDate]
-            m.frontmatter.setString("ai_updated", formatter.string(from: Date()))
-            save(m)
-        }
-        return changed
+        // Always record the check — batch runs use this to skip models
+        // that have already been looked at, suggestions or not.
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        m.frontmatter.setString("ai_updated", formatter.string(from: Date()))
+        save(m)
+        return foundSuggestions
     }
 
     // MARK: - Trash

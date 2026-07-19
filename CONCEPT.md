@@ -96,7 +96,13 @@ Prints fine at 0.2 mm without supports …
 |--------|---------|---------|----------------|
 | STL    | ✅ | ✅ | ModelIO/SceneKit natively |
 | 3MF    | ✅ | ✅ | own parser (ZIP + XML mesh) |
+| STEP/STP | ✅ | point cloud | CARTESIAN_POINT coordinates rendered as a point-cloud silhouette — faces would need a CAD kernel |
+| F3D    | ✅ | embedded image | preview image extracted from the Fusion 360 archive (ZIP); geometry is proprietary |
 | other files (photos, PDFs, …) | ✅ | images yes | grouped file list in the model detail |
+
+The "Open in Cura" actions are limited to formats Cura can actually
+open (STL/3MF/OBJ) — CAD files show a preview but are not handed to
+the slicer.
 
 ## App Structure (UI)
 
@@ -162,6 +168,14 @@ participate in filtering until accepted. The API key lives in the macOS
 keychain (Settings → AI); without a key the feature stays inert. Only
 the source URL, page text, and the names of missing fields leave the
 machine — never 3D files.
+
+A batch run (toolbar) applies the same enrichment to every model with a
+source link and missing fields in one pass: preview of the affected
+models first, then a modal progress view with cancellation, request
+pacing, and a per-model failure summary at the end. Every check —
+including one with zero findings — is recorded via `ai_updated`, and
+already-checked models are skipped on later batch runs; the single-model
+✨ action can always re-check.
 
 **Trash:** deleting a model moves its folder into `deleted/` inside the
 archive root (excluded from the model list). The sidebar's trash entry

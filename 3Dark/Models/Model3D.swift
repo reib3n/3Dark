@@ -10,8 +10,12 @@ struct Model3D: Identifiable, Equatable, Hashable {
 
     var id: String { folderURL.path }
 
-    static let previewExtensions = ["stl", "3mf", "obj", "ply", "usdz"]
+    /// Mesh formats first — they make the better primary preview; STEP
+    /// (point-cloud preview) and F3D (embedded image) come last.
+    static let previewExtensions = ["stl", "3mf", "obj", "ply", "usdz", "step", "stp", "f3d"]
     static let imageExtensions = ["png", "jpg", "jpeg", "heic", "gif", "tiff", "webp"]
+    /// Formats Cura can actually open.
+    static let sliceableExtensions = ["stl", "3mf", "obj"]
 
     var title: String {
         let t = frontmatter.string("title")
@@ -73,6 +77,10 @@ struct Model3D: Identifiable, Equatable, Hashable {
 
     static func isImage(_ url: URL) -> Bool {
         imageExtensions.contains(url.pathExtension.lowercased())
+    }
+
+    static func isSliceable(_ url: URL) -> Bool {
+        sliceableExtensions.contains(url.pathExtension.lowercased())
     }
 
     func matches(search: String) -> Bool {

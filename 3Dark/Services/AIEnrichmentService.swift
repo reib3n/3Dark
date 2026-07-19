@@ -52,6 +52,20 @@ actor AIEnrichmentService {
         !(KeychainStore.string(for: apiKeyAccount) ?? "").isEmpty
     }
 
+    /// Models eligible for batch enrichment: they have an http(s) source
+    /// link, at least one enrichable field is still empty, and they have
+    /// not been checked by the AI before (`ai_updated` unset — a check
+    /// with zero findings counts too). Single-model enrichment ignores
+    /// this and can always re-check.
+    static func candidates(in models: [Model3D]) -> [Model3D] {
+        models.filter { model in
+            let source = model.frontmatter.string("source").lowercased()
+            guard source.hasPrefix("http://") || source.hasPrefix("https://") else { return false }
+            guard model.frontmatter.string("ai_updated").isEmpty else { return false }
+            return enrichableFields.contains { model.frontmatter.string($0).isEmpty }
+        }
+    }
+
     func enrich(model: Model3D) async throws -> AISuggestions {
         let sourceString = model.frontmatter.string("source")
         guard let url = URL(string: sourceString),

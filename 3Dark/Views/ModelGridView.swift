@@ -15,6 +15,7 @@ struct ModelBrowserView: View {
 
     @AppStorage("ModelViewMode") private var viewModeRaw = ModelViewMode.grid.rawValue
     @State private var pendingPermanentDelete: Model3D?
+    @State private var showingBatchEnrichment = false
 
     private var viewMode: ModelViewMode {
         ModelViewMode(rawValue: viewModeRaw) ?? .grid
@@ -40,6 +41,13 @@ struct ModelBrowserView: View {
                 .help("Switch between grid and list view")
 
                 if !isTrash {
+                    Button {
+                        showingBatchEnrichment = true
+                    } label: {
+                        Label("Enrich All with AI", systemImage: "sparkles")
+                    }
+                    .help("Suggest missing metadata for all models with a source link")
+
                     Button {
                         pickAndImport()
                     } label: {
@@ -72,6 +80,9 @@ struct ModelBrowserView: View {
                     )
                 }
             }
+        }
+        .sheet(isPresented: $showingBatchEnrichment) {
+            BatchEnrichmentView()
         }
         .dropDestination(for: URL.self) { urls, _ in
             guard !isTrash else { return false }

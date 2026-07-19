@@ -97,12 +97,12 @@ struct ModelDetailView: View {
                 .help("Show model folder in Finder")
 
                 Button {
-                    if let file = previewFile ?? model.primary3DFile { store.openInCura(file) }
+                    if let file = curaFile { store.openInCura(file) }
                 } label: {
                     Label("Open in Cura", systemImage: "printer")
                 }
                 .help("Send the displayed 3D file to Cura")
-                .disabled(model.primary3DFile == nil)
+                .disabled(curaFile == nil)
 
                 Button {
                     save()
@@ -174,6 +174,13 @@ struct ModelDetailView: View {
 
     private var isTrashed: Bool {
         store.trashedModels.contains { $0.id == model.id }
+    }
+
+    /// The file the Cura button targets: the displayed file when Cura
+    /// can open it, otherwise the first sliceable file of the model.
+    private var curaFile: URL? {
+        if let previewFile, Model3D.isSliceable(previewFile) { return previewFile }
+        return model.files.first(where: Model3D.isSliceable)
     }
 
     // MARK: - Metadata
@@ -481,7 +488,7 @@ struct ModelDetailView: View {
                 Text(file.lastPathComponent)
             }
             Spacer()
-            if Model3D.isPreviewable(file) {
+            if Model3D.isSliceable(file) {
                 Button("Open in Cura") { store.openInCura(file) }
                     .buttonStyle(.link)
                     .font(.callout)
@@ -549,6 +556,7 @@ struct ModelDetailView: View {
     private func icon(for file: URL) -> String {
         switch file.pathExtension.lowercased() {
         case "stl", "3mf", "obj", "ply", "usdz": return "cube"
+        case "step", "stp", "f3d": return "square.on.circle"
         case "png", "jpg", "jpeg", "heic": return "photo"
         case "gcode": return "printer"
         case "pdf": return "doc.richtext"

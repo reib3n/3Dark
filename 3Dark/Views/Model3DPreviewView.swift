@@ -6,9 +6,15 @@ struct Model3DPreviewView: View {
     @Binding var selectedFile: URL?
 
     @State private var scene: SCNScene?
+    @State private var previewImage: NSImage?
     @State private var errorText: String?
     @State private var isLoading = false
     @State private var resetToken = 0
+
+    private enum PreviewContent {
+        case scene(SCNScene)
+        case image(NSImage)
+    }
 
     private enum PreviewTarget: Equatable {
         case none
@@ -31,6 +37,11 @@ struct Model3DPreviewView: View {
 
             if let scene {
                 SceneKitView(scene: scene, resetToken: resetToken)
+            } else if let previewImage {
+                Image(nsImage: previewImage)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(12)
             } else if isLoading {
                 ProgressView()
             } else if let errorText {
@@ -99,19 +110,25 @@ struct Model3DPreviewView: View {
         }
         .task(id: target) {
             scene = nil
+            previewImage = nil
             errorText = nil
             let target = target
             guard target != .none else { return }
             isLoading = true
             defer { isLoading = false }
 
-            let result = await Task.detached(priority: .userInitiated) { () -> Result<SCNScene, Error> in
+            let result = await Task.detached(priority: .userInitiated) { () -> Result<PreviewContent, Error> in
                 do {
                     switch target {
                     case .single(let url):
-                        return .success(try GeometryLoader.loadScene(from: url))
+                        if url.pathExtension.lowercased() == "f3d" {
+                            return .success(.image(try F3DPreview.extractImage(from: url)))
+                        }
+                        return .success(.scene(try GeometryLoader.loadScene(from: url)))
                     case .combined(let urls):
-                        return .success(try GeometryLoader.loadCombinedScene(from: urls))
+                        // F3D carries no loadable geometry — leave it out.
+                        let meshURLs = urls.filter { $0.pathExtension.lowercased() != "f3d" }
+                        return .success(.scene(try GeometryLoader.loadCombinedScene(from: meshURLs)))
                     case .none:
                         return .failure(GeometryError.loadFailed("Preview"))
                     }
@@ -121,8 +138,10 @@ struct Model3DPreviewView: View {
             }.value
 
             switch result {
-            case .success(let loaded):
+            case .success(.scene(let loaded)):
                 scene = loaded
+            case .success(.image(let image)):
+                previewImage = image
             case .failure(let error):
                 errorText = error.localizedDescription
             }
