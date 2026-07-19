@@ -35,22 +35,22 @@ struct Model3DPreviewView: View {
                 ProgressView()
             } else if let errorText {
                 ContentUnavailableView(
-                    "Vorschau nicht möglich",
+                    "Preview Not Available",
                     systemImage: "exclamationmark.triangle",
                     description: Text(errorText)
                 )
             } else {
                 ContentUnavailableView(
-                    "Keine 3D-Datei",
+                    "No 3D File",
                     systemImage: "cube.transparent",
-                    description: Text("Lege eine STL- oder 3MF-Datei in den Modellordner.")
+                    description: Text("Place an STL or 3MF file in the model folder.")
                 )
             }
         }
         .overlay(alignment: .topLeading) {
             switch target {
             case .combined(let urls):
-                Text("Gesamtansicht · \(urls.count) Teile")
+                Text("Combined view · \(urls.count) parts")
                     .font(.caption)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -74,14 +74,14 @@ struct Model3DPreviewView: View {
                         Button {
                             selectedFile = nil
                         } label: {
-                            Label("Alle Teile", systemImage: "square.grid.2x2")
+                            Label("All Parts", systemImage: "square.grid.2x2")
                                 .font(.system(size: 12, weight: .medium))
                                 .padding(.horizontal, 9)
                                 .padding(.vertical, 6)
                                 .glassBackground(in: Capsule())
                         }
                         .buttonStyle(.plain)
-                        .help("Alle Teile gemeinsam anzeigen")
+                        .help("Show all parts together")
                     }
                     Button {
                         resetToken += 1
@@ -92,7 +92,7 @@ struct Model3DPreviewView: View {
                             .glassBackground(in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .help("Ansicht zurücksetzen (zentrieren und zurückdrehen)")
+                    .help("Reset view (center and rotate back)")
                 }
                 .padding(10)
             }
@@ -113,7 +113,7 @@ struct Model3DPreviewView: View {
                     case .combined(let urls):
                         return .success(try GeometryLoader.loadCombinedScene(from: urls))
                     case .none:
-                        return .failure(GeometryError.loadFailed("Vorschau"))
+                        return .failure(GeometryError.loadFailed("Preview"))
                     }
                 } catch {
                     return .failure(error)
@@ -130,11 +130,11 @@ struct Model3DPreviewView: View {
     }
 }
 
-/// SCNView-Einbettung mit Kamera-Reset.
+/// SCNView wrapper with camera reset.
 ///
-/// Merkt sich die Ausgangs-Transformation der Szenenkamera; bei jedem neuen
-/// `resetToken` wird die aktuelle Kamera (auch die Free-Cam, die SceneKit
-/// bei Nutzerinteraktion anlegen kann) animiert dorthin zurückgesetzt.
+/// Remembers the initial transform of the scene camera; on every new
+/// `resetToken` the current camera (including the free cam SceneKit may
+/// create on user interaction) is animated back to it.
 private struct SceneKitView: NSViewRepresentable {
     let scene: SCNScene
     let resetToken: Int

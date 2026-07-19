@@ -1,8 +1,8 @@
 import Foundation
 import CoreServices
 
-/// Beobachtet einen Ordner rekursiv per FSEvents und meldet Änderungen
-/// gesammelt (Latenz), damit die App externe Bearbeitungen sofort übernimmt.
+/// Watches a folder recursively via FSEvents and reports changes
+/// coalesced (latency) so the app picks up external edits immediately.
 final class FolderWatcher {
     private var stream: FSEventStreamRef?
     private let handler: () -> Void

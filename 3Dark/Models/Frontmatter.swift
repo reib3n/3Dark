@@ -5,13 +5,28 @@ struct FrontmatterField: Equatable, Hashable {
     var value: String
 }
 
-/// YAML-Frontmatter einer model.md-Datei.
+/// YAML front matter of a model.md file.
 ///
-/// Bewusst kein vollständiger YAML-Parser: unterstützt werden Skalare
-/// (`key: wert`), Inline-Listen (`key: [a, b]`) und einfache Block-Listen.
-/// Unbekannte Felder bleiben beim Speichern unverändert erhalten.
+/// Deliberately not a full YAML parser: supports scalars (`key: value`),
+/// inline lists (`key: [a, b]`), and simple block lists. Unknown fields
+/// are preserved untouched when saving (round-trip safe).
 struct Frontmatter: Equatable, Hashable {
     var fields: [FrontmatterField] = []
+
+    /// Canonical (English) keys with their legacy German counterparts
+    /// from earlier versions of the file format.
+    static let legacyKeys: [String: String] = [
+        "collections": "sammlungen",
+        "preview_image": "vorschaubild",
+        "source": "quelle",
+        "author": "autor",
+        "license": "lizenz",
+        "nozzle": "duese",
+        "layer_height": "schichthoehe",
+        "supports": "stuetzen",
+        "printed": "gedruckt",
+        "rating": "bewertung",
+    ]
 
     subscript(key: String) -> String? {
         get { fields.first(where: { $0.key == key })?.value }
@@ -28,20 +43,31 @@ struct Frontmatter: Equatable, Hashable {
         }
     }
 
-    /// Skalarwert ohne umschließende Anführungszeichen (für Anzeige/Bearbeitung).
+    /// Renames legacy German keys to their canonical English form,
+    /// keeping field order and values intact. Files are rewritten with
+    /// canonical keys on the next save.
+    mutating func migrateLegacyKeys() {
+        for (canonical, legacy) in Self.legacyKeys {
+            guard self[canonical] == nil,
+                  let index = fields.firstIndex(where: { $0.key == legacy }) else { continue }
+            fields[index].key = canonical
+        }
+    }
+
+    /// Scalar value with surrounding quotes removed (for display/editing).
     func string(_ key: String) -> String {
         Frontmatter.unquote(self[key] ?? "")
     }
 
-    /// Setzt einen Skalar; leerer Wert entfernt das Feld.
+    /// Sets a scalar; an empty value removes the field.
     mutating func setString(_ key: String, _ value: String) {
         let trimmed = value.trimmingCharacters(in: .whitespaces)
         self[key] = trimmed.isEmpty ? nil : Frontmatter.quoteIfNeeded(trimmed)
     }
 
-    /// Listenwert (`key: [a, b]` bzw. Block-Liste) als String-Array.
-    /// Als Trenner wird neben Komma auch Semikolon akzeptiert,
-    /// damit handgeschriebene Dateien tolerant gelesen werden.
+    /// List value (`key: [a, b]` or block list) as a string array.
+    /// Accepts semicolons in addition to commas as separators so that
+    /// hand-written files are read leniently.
     func list(_ key: String) -> [String] {
         guard let raw = self[key] else { return [] }
         var inner = raw.trimmingCharacters(in: .whitespaces)
@@ -53,8 +79,8 @@ struct Frontmatter: Equatable, Hashable {
             .filter { !$0.isEmpty }
     }
 
-    /// Setzt eine Inline-Liste; leere Liste entfernt das Feld,
-    /// außer `keepEmpty` verlangt ein explizites `[]`.
+    /// Sets an inline list; an empty list removes the field unless
+    /// `keepEmpty` requests an explicit `[]`.
     mutating func setList(_ key: String, _ values: [String], keepEmpty: Bool = false) {
         if values.isEmpty, !keepEmpty {
             self[key] = nil
@@ -68,7 +94,7 @@ struct Frontmatter: Equatable, Hashable {
         set { setList("tags", newValue, keepEmpty: true) }
     }
 
-    // MARK: - Parsen & Serialisieren
+    // MARK: - Parsing & serialization
 
     static func parse(document: String) -> (frontmatter: Frontmatter, body: String) {
         let lines = document.components(separatedBy: "\n")
@@ -134,7 +160,7 @@ struct Frontmatter: Equatable, Hashable {
         return output
     }
 
-    // MARK: - Helfer
+    // MARK: - Helpers
 
     static func unquote(_ value: String) -> String {
         var v = value

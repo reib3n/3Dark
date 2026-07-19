@@ -7,23 +7,22 @@ enum ImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sourceMissing(let name):
-            return "\(name) wurde nicht gefunden."
+            return String(localized: "\(name) was not found.")
         case .unzipFailed(let name):
-            return "\(name) konnte nicht entpackt werden."
+            return String(localized: "\(name) could not be unpacked.")
         }
     }
 }
 
-/// Importiert ZIP-Dateien, Ordner oder einzelne Dateien als neues Modell.
+/// Imports ZIP files, folders, or single files as a new model.
 ///
-/// Ablauf: Inhalt wird in einen neuen Modellordner im Archiv kopiert bzw.
-/// entpackt, alle enthaltenen Textdateien werden in Hierarchie-Reihenfolge
-/// in den Markdown-Teil der model.md übernommen und anschließend aus der
-/// Archiv-Kopie gelöscht (kein doppelter Inhalt). Die Quelle bleibt
-/// unangetastet.
+/// Flow: the content is copied/unpacked into a new model folder inside
+/// the archive, all contained text files are folded into the markdown
+/// part of the model.md in hierarchy order, and afterwards removed from
+/// the archive copy (no duplicated content). The source stays untouched.
 enum ModelImporter {
     static let textExtensions: Set<String> = ["txt", "md", "markdown", "text"]
-    /// Größere Textdateien werden nicht inline übernommen (bleiben als Datei).
+    /// Larger text files are not inlined (they remain as files).
     static let maxInlineTextBytes = 512 * 1024
 
     struct ImportResult {
@@ -64,7 +63,7 @@ enum ModelImporter {
             }
             return try buildModelMarkdown(in: folder, title: baseName)
         } catch {
-            // Halb importierte Ordner nicht liegen lassen.
+            // Do not leave half-imported folders behind.
             try? fileManager.removeItem(at: folder)
             throw error
         }
@@ -75,7 +74,7 @@ enum ModelImporter {
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
             .trimmingCharacters(in: .whitespaces)
-        let base = clean.isEmpty ? "Modell" : clean
+        let base = clean.isEmpty ? "Model" : clean
         var folder = rootURL.appendingPathComponent(base, isDirectory: true)
         var counter = 2
         while FileManager.default.fileExists(atPath: folder.path) {
@@ -85,7 +84,7 @@ enum ModelImporter {
         return folder
     }
 
-    // MARK: - Schritte
+    // MARK: - Steps
 
     private static func unzip(_ zipURL: URL, to target: URL) throws {
         let process = Process()
@@ -95,12 +94,14 @@ enum ModelImporter {
         process.standardError = FileHandle.nullDevice
         try process.run()
         process.waitUntilExit()
+        // Exit code 1 = warnings; content was extracted anyway.
         guard process.terminationStatus <= 1 else {
             throw ImportError.unzipFailed(zipURL.lastPathComponent)
         }
     }
 
-    /// ZIPs mit genau einem Wurzelordner (GitHub, viele Portale) eine Ebene anheben.
+    /// Lifts ZIPs with exactly one root folder (GitHub, many portals)
+    /// up one level.
     private static func flattenSingleSubdirectory(in folder: URL) throws {
         let fileManager = FileManager.default
         for _ in 0..<3 {
@@ -126,20 +127,21 @@ enum ModelImporter {
         let fileManager = FileManager.default
         let markdownURL = folder.appendingPathComponent("model.md")
 
-        // Bringt der Import bereits eine model.md mit (Migration aus einem
-        // anderen Archiv), wird sie als Basis übernommen statt überschrieben.
+        // If the import already ships a model.md (migration from another
+        // archive), use it as the base instead of overwriting it.
         var frontmatter = Frontmatter()
         var bodyParts: [String] = []
         if let existing = try? String(contentsOf: markdownURL, encoding: .utf8) {
             let parsed = Frontmatter.parse(document: existing)
             frontmatter = parsed.frontmatter
+            frontmatter.migrateLegacyKeys()
             let body = parsed.body.trimmingCharacters(in: .whitespacesAndNewlines)
             if !body.isEmpty { bodyParts.append(body) }
         }
         if frontmatter["title"] == nil { frontmatter.setString("title", title) }
         if frontmatter["tags"] == nil { frontmatter.tags = [] }
 
-        // Textdateien in Ordner-Hierarchie-Reihenfolge einsammeln.
+        // Collect text files in folder-hierarchy order.
         var textFiles: [(relative: String, url: URL)] = []
         if let enumerator = fileManager.enumerator(
             at: folder,
@@ -169,13 +171,13 @@ enum ModelImporter {
         }
 
         if bodyParts.isEmpty {
-            bodyParts.append("## Beschreibung\n\n\n## Druckhinweise")
+            bodyParts.append("## Description\n\n\n## Print Notes")
         }
         try frontmatter.serialized(body: bodyParts.joined(separator: "\n\n"))
             .write(to: markdownURL, atomically: true, encoding: .utf8)
 
-        // Erst nach erfolgreichem Schreiben der model.md: übernommene
-        // Textdateien aus der Archiv-Kopie entfernen.
+        // Only after the model.md has been written successfully: remove
+        // the inlined text files from the archive copy.
         for relative in inlined {
             try? fileManager.removeItem(at: folder.appendingPathComponent(relative))
         }
@@ -184,8 +186,8 @@ enum ModelImporter {
         return ImportResult(folderURL: folder, inlinedFiles: inlined, skippedFiles: skipped)
     }
 
-    /// Hierarchie-Reihenfolge: pro Ebene erst die Dateien (alphabetisch),
-    /// dann die Unterordner — README.txt kommt also vor docs/….
+    /// Hierarchy order: files of a level first (alphabetically), then
+    /// the subfolders — README.txt therefore comes before docs/….
     static func hierarchyOrder(_ a: String, _ b: String) -> Bool {
         let aComponents = a.components(separatedBy: "/")
         let bComponents = b.components(separatedBy: "/")
@@ -216,7 +218,7 @@ enum ModelImporter {
                 directories.append(url)
             }
         }
-        // Tiefste zuerst, damit verschachtelte leere Ordner mitfallen.
+        // Deepest first so that nested empty folders fall too.
         for directory in directories.sorted(by: { $0.path.count > $1.path.count }) {
             if let contents = try? fileManager.contentsOfDirectory(atPath: directory.path),
                contents.filter({ $0 != ".DS_Store" }).isEmpty {

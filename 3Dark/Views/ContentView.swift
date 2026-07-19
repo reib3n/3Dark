@@ -60,13 +60,13 @@ struct ContentView: View {
                             .id(model.id)
                     } else {
                         ContentUnavailableView(
-                            "Kein Modell ausgewählt",
+                            "No Model Selected",
                             systemImage: "cube.transparent",
-                            description: Text("Wähle ein Modell aus oder lege mit + ein neues an.")
+                            description: Text("Select a model or create a new one with +.")
                         )
                     }
                 }
-                .searchable(text: $searchText, placement: .toolbar, prompt: "Titel, Tags, Beschreibung …")
+                .searchable(text: $searchText, placement: .toolbar, prompt: "Title, tags, description…")
             }
         }
         .sheet(isPresented: $showingNewModelSheet) {
@@ -77,7 +77,7 @@ struct ContentView: View {
             }
         }
         .alert(
-            "Fehler",
+            "Error",
             isPresented: Binding(
                 get: { store.errorMessage != nil },
                 set: { if !$0 { store.errorMessage = nil } }
@@ -99,12 +99,12 @@ struct WelcomeView: View {
             Image(systemName: "cube.transparent")
                 .font(.system(size: 64))
                 .foregroundStyle(.secondary)
-            Text("Willkommen bei 3Dark")
+            Text("Welcome to 3Dark")
                 .font(.largeTitle.bold())
-            Text("Wähle den Ordner, in dem deine 3D-Modelle liegen sollen.\nJedes Modell bekommt darin einen eigenen Unterordner mit einer model.md.")
+            Text("Choose the folder where your 3D models should live.\nEach model gets its own subfolder with a model.md.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-            Button("Archiv-Ordner wählen …") {
+            Button("Choose Archive Folder…") {
                 store.chooseRootFolder()
             }
             .controlSize(.large)

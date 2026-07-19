@@ -1,6 +1,6 @@
 import Foundation
 
-/// Ein archiviertes Modell = ein Ordner im Archiv.
+/// An archived model = one folder inside the archive.
 struct Model3D: Identifiable, Equatable, Hashable {
     let folderURL: URL
     var frontmatter: Frontmatter
@@ -20,14 +20,14 @@ struct Model3D: Identifiable, Equatable, Hashable {
 
     var tags: [String] { frontmatter.tags }
 
-    /// Sammlungen fassen zusammengehörige Modelle (z. B. ein Schachspiel)
-    /// über das Frontmatter-Feld `sammlungen` zusammen.
-    var collections: [String] { frontmatter.list("sammlungen") }
+    /// Collections group models that belong together (e.g. a chess set)
+    /// via the `collections` front matter field.
+    var collections: [String] { frontmatter.list("collections") }
 
-    var rating: Int { Int(frontmatter.string("bewertung")) ?? 0 }
+    var rating: Int { Int(frontmatter.string("rating")) ?? 0 }
 
-    /// Die Datei, die für Vorschau und Thumbnail verwendet wird
-    /// (bevorzugt in der Reihenfolge von `previewExtensions`).
+    /// The file used for preview and thumbnail rendering
+    /// (preferred in the order of `previewExtensions`).
     var primary3DFile: URL? {
         for ext in Self.previewExtensions {
             if let file = files.first(where: { $0.pathExtension.lowercased() == ext }) {
@@ -37,12 +37,21 @@ struct Model3D: Identifiable, Equatable, Hashable {
         return nil
     }
 
-    /// Alle 3D-Dateien des Modells (für Einzel- und Gesamtvorschau).
+    /// All 3D files of the model (for single-part and combined preview).
     var files3D: [URL] {
         files.filter { Model3D.isPreviewable($0) }
     }
 
-    /// Pfad einer Datei relativ zum Modellordner (für Anzeige/Gruppierung).
+    /// User-chosen preview image (front matter `preview_image`, path
+    /// relative to the model folder). Replaces the rendered thumbnail.
+    var previewImageFile: URL? {
+        let relative = frontmatter.string("preview_image")
+        guard !relative.isEmpty else { return nil }
+        let url = folderURL.appendingPathComponent(relative)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// Path of a file relative to the model folder (for display/grouping).
     func relativePath(of file: URL) -> String {
         file.path.replacingOccurrences(of: folderURL.path + "/", with: "")
     }
@@ -56,15 +65,6 @@ struct Model3D: Identifiable, Equatable, Hashable {
 
     static func isImage(_ url: URL) -> Bool {
         imageExtensions.contains(url.pathExtension.lowercased())
-    }
-
-    /// Vom Nutzer gewähltes Vorschaubild (Frontmatter `vorschaubild`,
-    /// Pfad relativ zum Modellordner). Ersetzt das gerenderte Thumbnail.
-    var previewImageFile: URL? {
-        let relative = frontmatter.string("vorschaubild")
-        guard !relative.isEmpty else { return nil }
-        let url = folderURL.appendingPathComponent(relative)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
     func matches(search: String) -> Bool {

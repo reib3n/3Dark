@@ -1,17 +1,17 @@
 import SwiftUI
 
-/// Chip-Eingabefeld für Listenwerte (Tags, Sammlungen).
+/// Chip input field for list values (tags, collections).
 ///
-/// Vorhandene Werte erscheinen als entfernbare Chips. Neue Werte werden
-/// per Texteingabe übernommen (Enter, Komma oder Semikolon) oder über das
-/// Plus-Menü aus den bereits im Archiv verwendeten Werten ausgewählt.
+/// Existing values appear as removable chips. New values are committed
+/// via text entry (Enter, comma, or semicolon) or picked from the values
+/// already used across the archive via the plus menu.
 struct TokenField: View {
     @Binding var tokens: [String]
     var suggestions: [String]
-    var placeholder: LocalizedStringKey = "Hinzufügen …"
+    var placeholder: LocalizedStringKey = "Add…"
     var accent: Color = .accentColor
     var icon = "tag"
-    /// Wird nach jeder Änderung an den Chips aufgerufen (z. B. zum Speichern).
+    /// Called after every chip change (e.g. to save).
     var onEdited: () -> Void = {}
 
     @State private var input = ""
@@ -50,7 +50,7 @@ struct TokenField: View {
                     }
                     .buttonStyle(.plain)
                     .fixedSize()
-                    .help("Vorhandenen Wert auswählen")
+                    .help("Choose an existing value")
                 }
             }
         }
@@ -83,7 +83,7 @@ struct TokenField: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .help("Entfernen")
+            .help("Remove")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
@@ -118,7 +118,7 @@ struct TokenField: View {
     }
 }
 
-/// Einfaches umbruchfähiges Layout für die Chips.
+/// Simple wrapping layout for the chips.
 struct FlowLayout: Layout {
     var spacing: CGFloat = 6
 

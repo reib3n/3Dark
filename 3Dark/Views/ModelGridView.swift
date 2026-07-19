@@ -28,36 +28,36 @@ struct ModelBrowserView: View {
         .navigationTitle("3Dark")
         .toolbar {
             ToolbarItemGroup {
-                Picker("Ansicht", selection: $viewModeRaw) {
-                    Label("Raster", systemImage: "square.grid.2x2")
+                Picker("View", selection: $viewModeRaw) {
+                    Label("Grid", systemImage: "square.grid.2x2")
                         .tag(ModelViewMode.grid.rawValue)
-                    Label("Liste", systemImage: "list.bullet")
+                    Label("List", systemImage: "list.bullet")
                         .tag(ModelViewMode.list.rawValue)
                 }
                 .pickerStyle(.segmented)
-                .help("Zwischen Raster- und Listenansicht umschalten")
+                .help("Switch between grid and list view")
 
                 Button {
                     pickAndImport()
                 } label: {
-                    Label("Importieren", systemImage: "square.and.arrow.down")
+                    Label("Import", systemImage: "square.and.arrow.down")
                 }
-                .help("ZIP-Dateien oder Ordner als neue Modelle importieren")
+                .help("Import ZIP files or folders as new models")
 
                 Button {
                     onNewModel()
                 } label: {
-                    Label("Neues Modell", systemImage: "plus")
+                    Label("New Model", systemImage: "plus")
                 }
-                .help("Neues Modell anlegen")
+                .help("Create New Model")
             }
         }
         .overlay {
             if models.isEmpty {
                 ContentUnavailableView(
-                    "Keine Modelle",
+                    "No Models",
                     systemImage: "cube",
-                    description: Text("Lege mit + ein neues Modell an, importiere ZIPs/Ordner per Drag & Drop oder passe die Filter an.")
+                    description: Text("Create a new model with +, import ZIPs/folders via drag & drop, or adjust the filters.")
                 )
             }
         }
@@ -66,25 +66,6 @@ struct ModelBrowserView: View {
             guard !fileURLs.isEmpty else { return false }
             importAndSelect(fileURLs)
             return true
-        }
-    }
-
-    private func pickAndImport() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = true
-        panel.message = "ZIP-Dateien oder Ordner auswählen — jede Auswahl wird ein eigenes Modell."
-        panel.prompt = "Importieren"
-        if panel.runModal() == .OK {
-            importAndSelect(panel.urls)
-        }
-    }
-
-    private func importAndSelect(_ urls: [URL]) {
-        let imported = store.importModels(from: urls)
-        if let last = imported.last {
-            selectedID = last.id
         }
     }
 
@@ -111,6 +92,25 @@ struct ModelBrowserView: View {
             }
         }
         .listStyle(.inset)
+    }
+
+    private func pickAndImport() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        panel.message = String(localized: "Select ZIP files or folders — each becomes its own model.")
+        panel.prompt = String(localized: "Import")
+        if panel.runModal() == .OK {
+            importAndSelect(panel.urls)
+        }
+    }
+
+    private func importAndSelect(_ urls: [URL]) {
+        let imported = store.importModels(from: urls)
+        if let last = imported.last {
+            selectedID = last.id
+        }
     }
 }
 
@@ -219,7 +219,7 @@ private struct ModelListRow: View {
     }
 }
 
-/// Kompakte Sterne-Anzeige (gefüllt = Bewertung, Rest angedeutet).
+/// Compact star display (filled = rating, rest hinted).
 struct RatingStars: View {
     let rating: Int
 
@@ -241,20 +241,20 @@ struct NewModelSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Neues Modell anlegen")
+            Text("Create New Model")
                 .font(.headline)
-            Text("Es wird ein Ordner mit einer model.md im Archiv erstellt.")
+            Text("A folder with a model.md will be created in the archive.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            TextField("Name des Modells", text: $name)
+            TextField("Model name", text: $name)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 300)
                 .onSubmit(create)
             HStack {
                 Spacer()
-                Button("Abbrechen") { dismiss() }
+                Button("Cancel") { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Anlegen", action: create)
+                Button("Create", action: create)
                     .keyboardShortcut(.defaultAction)
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }

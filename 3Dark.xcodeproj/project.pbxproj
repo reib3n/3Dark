@@ -87,7 +87,7 @@
 			};
 			buildConfigurationList = 3DA0000000000000000000AB /* Build configuration list for PBXProject "3Dark" */;
 			compatibilityVersion = "Xcode 15.0";
-			developmentRegion = de;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				de,

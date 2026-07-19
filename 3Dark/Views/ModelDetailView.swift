@@ -8,15 +8,15 @@ struct ModelDetailView: View {
     @State private var title: String
     @State private var tagList: [String]
     @State private var collectionList: [String]
-    @State private var quelle: String
-    @State private var autor: String
-    @State private var lizenz: String
+    @State private var source: String
+    @State private var author: String
+    @State private var license: String
     @State private var material: String
-    @State private var duese: String
-    @State private var schichthoehe: String
-    @State private var stuetzen: String
-    @State private var gedruckt: String
-    @State private var bewertung: Int
+    @State private var nozzle: String
+    @State private var layerHeight: String
+    @State private var supports: String
+    @State private var printed: String
+    @State private var rating: Int
     @State private var bodyText: String
     @State private var showMarkdownPreview = false
     @State private var previewFile: URL?
@@ -27,16 +27,16 @@ struct ModelDetailView: View {
         let fm = model.frontmatter
         _title = State(initialValue: fm.string("title").isEmpty ? model.folderURL.lastPathComponent : fm.string("title"))
         _tagList = State(initialValue: fm.tags)
-        _collectionList = State(initialValue: fm.list("sammlungen"))
-        _quelle = State(initialValue: fm.string("quelle"))
-        _autor = State(initialValue: fm.string("autor"))
-        _lizenz = State(initialValue: fm.string("lizenz"))
+        _collectionList = State(initialValue: fm.list("collections"))
+        _source = State(initialValue: fm.string("source"))
+        _author = State(initialValue: fm.string("author"))
+        _license = State(initialValue: fm.string("license"))
         _material = State(initialValue: fm.string("material"))
-        _duese = State(initialValue: fm.string("duese"))
-        _schichthoehe = State(initialValue: fm.string("schichthoehe"))
-        _stuetzen = State(initialValue: fm.string("stuetzen"))
-        _gedruckt = State(initialValue: fm.string("gedruckt"))
-        _bewertung = State(initialValue: Int(fm.string("bewertung")) ?? 0)
+        _nozzle = State(initialValue: fm.string("nozzle"))
+        _layerHeight = State(initialValue: fm.string("layer_height"))
+        _supports = State(initialValue: fm.string("supports"))
+        _printed = State(initialValue: fm.string("printed"))
+        _rating = State(initialValue: Int(fm.string("rating")) ?? 0)
         _bodyText = State(initialValue: model.body)
     }
 
@@ -44,16 +44,16 @@ struct ModelDetailView: View {
         var m = model
         m.frontmatter.setString("title", title)
         m.frontmatter.tags = tagList
-        m.frontmatter.setList("sammlungen", collectionList)
-        m.frontmatter.setString("quelle", quelle)
-        m.frontmatter.setString("autor", autor)
-        m.frontmatter.setString("lizenz", lizenz)
+        m.frontmatter.setList("collections", collectionList)
+        m.frontmatter.setString("source", source)
+        m.frontmatter.setString("author", author)
+        m.frontmatter.setString("license", license)
         m.frontmatter.setString("material", material)
-        m.frontmatter.setString("duese", duese)
-        m.frontmatter.setString("schichthoehe", schichthoehe)
-        m.frontmatter.setString("stuetzen", stuetzen)
-        m.frontmatter.setString("gedruckt", gedruckt)
-        m.frontmatter.setString("bewertung", bewertung == 0 ? "" : String(bewertung))
+        m.frontmatter.setString("nozzle", nozzle)
+        m.frontmatter.setString("layer_height", layerHeight)
+        m.frontmatter.setString("supports", supports)
+        m.frontmatter.setString("printed", printed)
+        m.frontmatter.setString("rating", rating == 0 ? "" : String(rating))
         m.body = bodyText
         return m
     }
@@ -89,24 +89,24 @@ struct ModelDetailView: View {
                 Button {
                     store.revealInFinder(model.folderURL)
                 } label: {
-                    Label("Im Finder zeigen", systemImage: "folder")
+                    Label("Show in Finder", systemImage: "folder")
                 }
-                .help("Modellordner im Finder zeigen")
+                .help("Show model folder in Finder")
 
                 Button {
                     if let file = previewFile ?? model.primary3DFile { store.openInCura(file) }
                 } label: {
-                    Label("In Cura öffnen", systemImage: "printer")
+                    Label("Open in Cura", systemImage: "printer")
                 }
-                .help("Angezeigte 3D-Datei an Cura übergeben")
+                .help("Send the displayed 3D file to Cura")
                 .disabled(model.primary3DFile == nil)
 
                 Button {
-                    store.save(appliedModel)
+                    save()
                 } label: {
-                    Label("Speichern", systemImage: "square.and.arrow.down")
+                    Label("Save", systemImage: "square.and.arrow.down")
                 }
-                .help("Änderungen in model.md speichern (⌘S)")
+                .help("Save changes to model.md (⌘S)")
                 .keyboardShortcut("s", modifiers: .command)
                 .disabled(!isDirty)
             }
@@ -114,11 +114,12 @@ struct ModelDetailView: View {
         .navigationTitle(title)
     }
 
-    // MARK: - Metadaten
+    // MARK: - Metadata
 
     private var metadataSection: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 8) {
-            field("Titel", text: $title)
+            field("Title", text: $title)
+
             GridRow {
                 Text("Tags")
                     .gridColumnAlignment(.trailing)
@@ -126,7 +127,7 @@ struct ModelDetailView: View {
                 TokenField(
                     tokens: $tagList,
                     suggestions: store.tagCounts.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending },
-                    placeholder: "Tag hinzufügen …",
+                    placeholder: "Add tag…",
                     accent: .blue,
                     icon: "tag",
                     onEdited: save
@@ -134,22 +135,22 @@ struct ModelDetailView: View {
                 .frame(maxWidth: 420, alignment: .leading)
             }
             GridRow {
-                Text("Sammlungen")
+                Text("Collections")
                     .gridColumnAlignment(.trailing)
                     .foregroundStyle(.secondary)
                 TokenField(
                     tokens: $collectionList,
                     suggestions: store.collectionCounts.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending },
-                    placeholder: "Sammlung hinzufügen …",
+                    placeholder: "Add collection…",
                     accent: .purple,
                     icon: "square.stack.3d.up",
                     onEdited: save
                 )
                 .frame(maxWidth: 420, alignment: .leading)
             }
-            field("Quelle", text: $quelle, prompt: "https://…")
-            field("Autor", text: $autor)
-            field("Lizenz", text: $lizenz, prompt: "CC BY 4.0")
+            field("Source", text: $source, prompt: "https://…")
+            field("Author", text: $author)
+            field("License", text: $license, prompt: "CC BY 4.0")
 
             GridRow {
                 Text("")
@@ -157,16 +158,16 @@ struct ModelDetailView: View {
             }
 
             field("Material", text: $material, prompt: "PLA")
-            field("Düse", text: $duese, prompt: "0.4")
-            field("Schichthöhe", text: $schichthoehe, prompt: "0.2")
-            field("Stützen", text: $stuetzen, prompt: "ja / nein")
-            field("Gedruckt am", text: $gedruckt, prompt: "JJJJ-MM-TT")
+            field("Nozzle", text: $nozzle, prompt: "0.4")
+            field("Layer height", text: $layerHeight, prompt: "0.2")
+            field("Supports", text: $supports, prompt: "yes / no")
+            field("Printed on", text: $printed, prompt: "YYYY-MM-DD")
 
             GridRow {
-                Text("Bewertung")
+                Text("Rating")
                     .gridColumnAlignment(.trailing)
                     .foregroundStyle(.secondary)
-                Picker("Bewertung", selection: $bewertung) {
+                Picker("Rating", selection: $rating) {
                     Text("–").tag(0)
                     ForEach(1...5, id: \.self) { stars in
                         Text(String(repeating: "★", count: stars)).tag(stars)
@@ -175,7 +176,7 @@ struct ModelDetailView: View {
                 .labelsHidden()
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 320, alignment: .leading)
-                .onChange(of: bewertung) { _, _ in save() }
+                .onChange(of: rating) { _, _ in save() }
             }
         }
     }
@@ -192,7 +193,7 @@ struct ModelDetailView: View {
         }
     }
 
-    /// Übernimmt den aktuellen Formularstand in model.md.
+    /// Writes the current form state to model.md.
     private func save() {
         store.save(appliedModel)
     }
@@ -202,12 +203,12 @@ struct ModelDetailView: View {
     private var markdownSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Beschreibung & Druckhinweise")
+                Text("Description & Print Notes")
                     .font(.headline)
                 Spacer()
-                Picker("Ansicht", selection: $showMarkdownPreview) {
-                    Text("Bearbeiten").tag(false)
-                    Text("Vorschau").tag(true)
+                Picker("View", selection: $showMarkdownPreview) {
+                    Text("Edit").tag(false)
+                    Text("Preview").tag(true)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -238,9 +239,9 @@ struct ModelDetailView: View {
         )) ?? AttributedString(bodyText)
     }
 
-    // MARK: - Dateien
+    // MARK: - Files
 
-    /// Dateien nach Unterordner gruppiert (Hauptordner zuerst).
+    /// Files grouped by subfolder (root folder first).
     private var groupedFiles: [(directory: String, files: [URL])] {
         var groups: [String: [URL]] = [:]
         for file in model.files {
@@ -262,11 +263,11 @@ struct ModelDetailView: View {
 
     private var filesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Dateien")
+            Text("Files")
                 .font(.headline)
 
             if model.files.isEmpty {
-                Text("Noch keine Dateien – zieh STL/3MF-Dateien einfach hierher oder in den Ordner im Finder.")
+                Text("No files yet – just drag STL/3MF files here or into the folder in Finder.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
@@ -281,7 +282,7 @@ struct ModelDetailView: View {
                         fileRow(file, indented: !group.directory.isEmpty)
                     }
                 }
-                Text("Tipp: Klick auf ein 3D-Teil zeigt es in der Vorschau; Dateien lassen sich per Drag & Drop hierher kopieren.")
+                Text("Tip: Click a 3D part to show it in the preview; files can be copied here via drag & drop.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -302,30 +303,30 @@ struct ModelDetailView: View {
                         .foregroundStyle(isActivePreview(file) ? Color.accentColor : .primary)
                 }
                 .buttonStyle(.plain)
-                .help("In der 3D-Vorschau anzeigen")
+                .help("Show in the 3D preview")
             } else {
                 Text(file.lastPathComponent)
             }
             Spacer()
             if Model3D.isPreviewable(file) {
-                Button("In Cura öffnen") { store.openInCura(file) }
+                Button("Open in Cura") { store.openInCura(file) }
                     .buttonStyle(.link)
                     .font(.callout)
             }
             if Model3D.isImage(file) {
-                let isCurrent = model.frontmatter.string("vorschaubild") == model.relativePath(of: file)
-                Button(isCurrent ? "✓ Vorschaubild" : "Als Vorschaubild") {
+                let isCurrent = model.frontmatter.string("preview_image") == model.relativePath(of: file)
+                Button(isCurrent ? "✓ Thumbnail" : "Use as Thumbnail") {
                     var m = appliedModel
-                    m.frontmatter.setString("vorschaubild", isCurrent ? "" : model.relativePath(of: file))
+                    m.frontmatter.setString("preview_image", isCurrent ? "" : model.relativePath(of: file))
                     store.save(m)
                 }
                 .buttonStyle(.link)
                 .font(.callout)
                 .help(isCurrent
-                    ? "Wieder das gerenderte 3D-Thumbnail verwenden"
-                    : "Dieses Bild in der Übersicht als Vorschaubild zeigen")
+                    ? "Use the rendered 3D thumbnail again"
+                    : "Show this image as the thumbnail in the overview")
             }
-            Button("Zeigen") { store.revealInFinder(file) }
+            Button("Show") { store.revealInFinder(file) }
                 .buttonStyle(.link)
                 .font(.callout)
         }

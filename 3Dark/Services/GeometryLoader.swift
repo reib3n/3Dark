@@ -9,23 +9,23 @@ enum GeometryError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .loadFailed(let name):
-            return "\(name) konnte nicht geladen werden."
+            return String(localized: "\(name) could not be loaded.")
         }
     }
 }
 
-/// Lädt 3D-Dateien und baut daraus eine anzeigefertige Szene
-/// (zentriert, normiert, mit Material, Kamera und Licht).
+/// Loads 3D files and builds a display-ready scene from them
+/// (centered, normalized, with material, camera, and lights).
 enum GeometryLoader {
-    /// Kantenlänge, auf die das Modell in der Szene normiert wird.
+    /// Edge length the model is normalized to within the scene.
     private static let normalizedExtent: CGFloat = 10
 
     static func loadScene(from url: URL) throws -> SCNScene {
         makeScene(around: try loadModelNode(from: url))
     }
 
-    /// Gesamtansicht: alle Teile maßstabsgetreu nebeneinander auf einer
-    /// gemeinsamen Grundebene (gleiche Einheiten vorausgesetzt).
+    /// Combined view: all parts true to scale next to each other on a
+    /// shared ground plane (assuming identical units).
     static func loadCombinedScene(from urls: [URL]) throws -> SCNScene {
         var containers: [SCNNode] = []
         for url in urls {
@@ -35,7 +35,7 @@ enum GeometryLoader {
             containers.append(container)
         }
         guard !containers.isEmpty else {
-            throw GeometryError.loadFailed("Gesamtansicht")
+            throw GeometryError.loadFailed("Combined view")
         }
 
         let boxes = containers.map { $0.boundingBox }
@@ -76,7 +76,7 @@ enum GeometryLoader {
             }
         }
 
-        // STL/3MF/PLY aus der Druckerwelt sind Z-hoch, SceneKit ist Y-hoch.
+        // STL/3MF/PLY from the printing world are Z-up, SceneKit is Y-up.
         if ["stl", "3mf", "ply"].contains(ext) {
             modelNode.eulerAngles.x = -.pi / 2
         }
@@ -132,7 +132,7 @@ enum GeometryLoader {
         return scene
     }
 
-    /// Einheitliches, materialneutrales Erscheinungsbild für alle Modelle.
+    /// Uniform, material-neutral appearance for all models.
     private static func applyPrintMaterial(to node: SCNNode) {
         let material = SCNMaterial()
         material.lightingModel = .physicallyBased

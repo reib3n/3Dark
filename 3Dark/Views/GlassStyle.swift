@@ -1,8 +1,8 @@
 import SwiftUI
 
 extension View {
-    /// Liquid-Glass-Hintergrund ab macOS 26 (neue Apple-Designsprache),
-    /// davor Material-Fallback — gleiche Optik-Absicht, ältere Umsetzung.
+    /// Liquid Glass background on macOS 26+ (new Apple design language),
+    /// material fallback before that — same visual intent, older look.
     @ViewBuilder
     func glassBackground(in shape: some Shape) -> some View {
         if #available(macOS 26.0, *) {

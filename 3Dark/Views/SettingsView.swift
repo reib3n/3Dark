@@ -8,12 +8,12 @@ enum AppearanceMode: String, CaseIterable {
     var label: LocalizedStringKey {
         switch self {
         case .system: return "System"
-        case .light: return "Hell"
-        case .dark: return "Dunkel"
+        case .light: return "Light"
+        case .dark: return "Dark"
         }
     }
 
-    /// nil = der Systemeinstellung folgen.
+    /// nil = follow the system setting.
     var colorScheme: ColorScheme? {
         switch self {
         case .system: return nil
@@ -27,7 +27,12 @@ enum AppLanguage: String, CaseIterable {
     case german = "de"
     case english = "en"
 
-    /// Anzeige immer in der jeweiligen Sprache selbst.
+    /// Default derived from the system language on first launch.
+    static var initialValue: AppLanguage {
+        Locale.current.language.languageCode?.identifier == "de" ? .german : .english
+    }
+
+    /// Always displayed in the language itself.
     var label: String {
         switch self {
         case .german: return "Deutsch"
@@ -40,30 +45,30 @@ enum AppLanguage: String, CaseIterable {
 
 struct SettingsView: View {
     @AppStorage("AppearanceMode") private var appearanceRaw = AppearanceMode.system.rawValue
-    @AppStorage("AppLanguage") private var languageRaw = AppLanguage.german.rawValue
+    @AppStorage("AppLanguage") private var languageRaw = AppLanguage.initialValue.rawValue
 
     var body: some View {
         Form {
             Section {
-                Picker("Erscheinungsbild:", selection: $appearanceRaw) {
+                Picker("Appearance:", selection: $appearanceRaw) {
                     ForEach(AppearanceMode.allCases, id: \.rawValue) { mode in
                         Text(mode.label).tag(mode.rawValue)
                     }
                 }
                 .pickerStyle(.segmented)
-                Text("„System“ folgt automatisch der macOS-Einstellung.")
+                Text("“System” automatically follows the macOS setting.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                Picker("Sprache:", selection: $languageRaw) {
+                Picker("Language:", selection: $languageRaw) {
                     ForEach(AppLanguage.allCases, id: \.rawValue) { language in
                         Text(language.label).tag(language.rawValue)
                     }
                 }
                 .pickerStyle(.menu)
-                Text("Gilt für die Oberfläche der App.")
+                Text("Applies to the app’s interface.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -71,6 +76,6 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 460)
         .preferredColorScheme(AppearanceMode(rawValue: appearanceRaw)?.colorScheme)
-        .environment(\.locale, (AppLanguage(rawValue: languageRaw) ?? .german).locale)
+        .environment(\.locale, (AppLanguage(rawValue: languageRaw) ?? .initialValue).locale)
     }
 }

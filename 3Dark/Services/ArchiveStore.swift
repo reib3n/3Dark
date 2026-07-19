@@ -1,11 +1,11 @@
 import AppKit
 import SwiftUI
 
-/// Zentrale Datenquelle der App.
+/// Central data source of the app.
 ///
-/// Das Dateisystem ist die einzige Wahrheit: Der Store liest die Ordner
-/// unterhalb des Archiv-Wurzelordners ein und schreibt ausschließlich
-/// `model.md`-Dateien. Externe Änderungen werden per FSEvents erkannt.
+/// The file system is the single source of truth: the store reads the
+/// folders below the archive root and only ever writes `model.md` files.
+/// External changes are picked up via FSEvents plus periodic polling.
 @MainActor
 final class ArchiveStore: ObservableObject {
     @Published private(set) var models: [Model3D] = []
@@ -16,9 +16,9 @@ final class ArchiveStore: ObservableObject {
     private var pollTimer: Timer?
     private static let defaultsKey = "ArchiveRootPath"
 
-    /// Fallback-Intervall, mit dem das Archiv zusätzlich zu FSEvents
-    /// regelmäßig neu eingelesen wird (z. B. für Netz-/Sync-Volumes,
-    /// auf denen FSEvents nicht zuverlässig feuert).
+    /// Fallback interval for re-reading the archive in addition to
+    /// FSEvents (e.g. for network/sync volumes where FSEvents is
+    /// unreliable).
     private static let pollInterval: TimeInterval = 15
 
     init() {
@@ -32,15 +32,15 @@ final class ArchiveStore: ObservableObject {
         }
     }
 
-    // MARK: - Wurzelordner
+    // MARK: - Archive root
 
     func chooseRootFolder() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
-        panel.prompt = "Als Archiv verwenden"
-        panel.message = "Wähle den Wurzelordner deines 3D-Archivs."
+        panel.prompt = String(localized: "Use as Archive")
+        panel.message = String(localized: "Choose the root folder of your 3D archive.")
         if panel.runModal() == .OK, let url = panel.url {
             UserDefaults.standard.set(url.path, forKey: Self.defaultsKey)
             setRoot(url)
@@ -59,7 +59,7 @@ final class ArchiveStore: ObservableObject {
         reload()
     }
 
-    // MARK: - Laden
+    // MARK: - Loading
 
     func reload() {
         guard let rootURL else {
@@ -78,8 +78,8 @@ final class ArchiveStore: ObservableObject {
             .map { loadModel(at: $0) }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
 
-        // Nur publizieren, wenn sich wirklich etwas geändert hat —
-        // das Polling soll die UI nicht unnötig anfassen.
+        // Only publish when something actually changed so that polling
+        // does not needlessly touch the UI.
         if loaded != models {
             models = loaded
         }
@@ -93,11 +93,13 @@ final class ArchiveStore: ObservableObject {
         if let text = try? String(contentsOf: markdownURL, encoding: .utf8) {
             let parsed = Frontmatter.parse(document: text)
             frontmatter = parsed.frontmatter
+            frontmatter.migrateLegacyKeys()
             body = parsed.body
             hasMarkdown = true
         }
 
-        // Rekursiv, damit Bauteil-Unterordner (teile/, fotos/, …) sichtbar sind.
+        // Recursive so that assembly subfolders (parts/, photos/, …)
+        // are visible.
         var files: [URL] = []
         if let enumerator = FileManager.default.enumerator(
             at: folder,
@@ -127,7 +129,7 @@ final class ArchiveStore: ObservableObject {
         )
     }
 
-    // MARK: - Schreiben
+    // MARK: - Writing
 
     func save(_ model: Model3D) {
         var m = model
@@ -145,7 +147,7 @@ final class ArchiveStore: ObservableObject {
                 models[index] = m
             }
         } catch {
-            errorMessage = "model.md konnte nicht gespeichert werden: \(error.localizedDescription)"
+            errorMessage = String(localized: "Could not save model.md: \(error.localizedDescription)")
         }
     }
 
@@ -154,26 +156,25 @@ final class ArchiveStore: ObservableObject {
         guard let rootURL else { return nil }
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
         let folder = ModelImporter.uniqueFolderURL(for: name, in: rootURL)
-        let clean = folder.lastPathComponent
 
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
             var frontmatter = Frontmatter()
-            frontmatter.setString("title", clean)
+            frontmatter.setString("title", folder.lastPathComponent)
             frontmatter.tags = []
-            let body = "## Beschreibung\n\n\n## Druckhinweise\n"
+            let body = "## Description\n\n\n## Print Notes\n"
             try frontmatter.serialized(body: body)
                 .write(to: folder.appendingPathComponent("model.md"), atomically: true, encoding: .utf8)
             reload()
             return models.first { $0.folderURL.path == folder.path }
         } catch {
-            errorMessage = "Modell konnte nicht angelegt werden: \(error.localizedDescription)"
+            errorMessage = String(localized: "Could not create model: \(error.localizedDescription)")
             return nil
         }
     }
 
-    /// Importiert ZIPs, Ordner oder einzelne Dateien als jeweils neues Modell.
-    /// Enthaltene Textdateien wandern in die model.md (siehe ModelImporter).
+    /// Imports ZIPs, folders, or single files as one new model each.
+    /// Contained text files are folded into the model.md (see ModelImporter).
     @discardableResult
     func importModels(from urls: [URL]) -> [Model3D] {
         guard let rootURL else { return [] }
@@ -182,17 +183,17 @@ final class ArchiveStore: ObservableObject {
 
         for url in urls {
             guard url.path != rootURL.path, !url.path.hasPrefix(rootURL.path + "/") else {
-                notes.append("\(url.lastPathComponent) liegt bereits im Archiv.")
+                notes.append(String(localized: "\(url.lastPathComponent) is already inside the archive."))
                 continue
             }
             do {
                 let result = try ModelImporter.importModel(from: url, intoArchive: rootURL)
                 importedPaths.append(result.folderURL.path)
                 if !result.skippedFiles.isEmpty {
-                    notes.append("\(result.folderURL.lastPathComponent): nicht übernommen (zu groß/nicht lesbar): \(result.skippedFiles.joined(separator: ", "))")
+                    notes.append(String(localized: "\(result.folderURL.lastPathComponent): skipped (too large or unreadable): \(result.skippedFiles.joined(separator: ", "))"))
                 }
             } catch {
-                notes.append("Import von \(url.lastPathComponent) fehlgeschlagen: \(error.localizedDescription)")
+                notes.append(String(localized: "Import of \(url.lastPathComponent) failed: \(error.localizedDescription)"))
             }
         }
 
@@ -211,13 +212,13 @@ final class ArchiveStore: ObservableObject {
             do {
                 try fileManager.copyItem(at: url, to: target)
             } catch {
-                errorMessage = "\(url.lastPathComponent) konnte nicht kopiert werden: \(error.localizedDescription)"
+                errorMessage = String(localized: "Could not copy \(url.lastPathComponent): \(error.localizedDescription)")
             }
         }
         reload()
     }
 
-    // MARK: - Tags
+    // MARK: - Tags & collections
 
     var tagCounts: [String: Int] {
         var counts: [String: Int] = [:]
@@ -239,7 +240,7 @@ final class ArchiveStore: ObservableObject {
         return counts
     }
 
-    // MARK: - Externe Programme
+    // MARK: - External programs
 
     func revealInFinder(_ url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -258,7 +259,7 @@ final class ArchiveStore: ObservableObject {
         }
 
         guard let appURL else {
-            errorMessage = "Cura wurde nicht gefunden. Ist UltiMaker Cura installiert?"
+            errorMessage = String(localized: "Cura was not found. Is UltiMaker Cura installed?")
             return
         }
         NSWorkspace.shared.open([fileURL], withApplicationAt: appURL, configuration: NSWorkspace.OpenConfiguration())

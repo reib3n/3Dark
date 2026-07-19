@@ -16,7 +16,7 @@ struct SidebarView: View {
                     minRating = 0
                 } label: {
                     HStack {
-                        Label("Alle Modelle", systemImage: "square.grid.2x2")
+                        Label("All Models", systemImage: "square.grid.2x2")
                         Spacer()
                         Text("\(store.models.count)")
                             .foregroundStyle(.secondary)
@@ -28,7 +28,7 @@ struct SidebarView: View {
 
             let collectionCounts = store.collectionCounts
             if !collectionCounts.isEmpty {
-                Section("Sammlungen") {
+                Section("Collections") {
                     ForEach(collectionCounts.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }, id: \.self) { collection in
                         Button {
                             selectedCollection = selectedCollection == collection ? nil : collection
@@ -51,7 +51,7 @@ struct SidebarView: View {
             Section("Tags") {
                 let counts = store.tagCounts
                 if counts.isEmpty {
-                    Text("Noch keine Tags")
+                    Text("No tags yet")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(counts.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }, id: \.self) { tag in
@@ -73,7 +73,7 @@ struct SidebarView: View {
                 }
             }
 
-            Section("Bewertung") {
+            Section("Rating") {
                 ForEach((1...5).reversed(), id: \.self) { stars in
                     let count = store.models.filter { $0.rating >= stars }.count
                     Button {
@@ -83,7 +83,7 @@ struct SidebarView: View {
                             Image(systemName: minRating == stars ? "checkmark.circle.fill" : "star")
                                 .foregroundStyle(minRating == stars ? Color.accentColor : .secondary)
                             RatingStars(rating: stars)
-                            Text("und mehr")
+                            Text("and up")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Spacer()
@@ -97,10 +97,10 @@ struct SidebarView: View {
             }
 
             if selectedTags.count > 1 {
-                Section("Verknüpfung") {
-                    Picker("Verknüpfung", selection: $matchAll) {
-                        Text("ODER – ein Tag genügt").tag(false)
-                        Text("UND – alle Tags").tag(true)
+                Section("Combination") {
+                    Picker("Combination", selection: $matchAll) {
+                        Text("OR – any tag matches").tag(false)
+                        Text("AND – all tags").tag(true)
                     }
                     .pickerStyle(.radioGroup)
                     .labelsHidden()
@@ -116,7 +116,7 @@ struct SidebarView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .help(root.path)
-                    Button("Ordner wechseln …") {
+                    Button("Change Folder…") {
                         store.chooseRootFolder()
                     }
                     .font(.caption)

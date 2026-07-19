@@ -10,18 +10,18 @@ enum ThreeMFError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unzipFailed: return "Die 3MF-Datei konnte nicht entpackt werden."
-        case .noModelFound: return "Die 3MF-Datei enthält keine Modelldaten."
-        case .invalidMesh: return "Die 3MF-Datei enthält kein gültiges Mesh."
+        case .unzipFailed: return String(localized: "The 3MF file could not be unpacked.")
+        case .noModelFound: return String(localized: "The 3MF file contains no model data.")
+        case .invalidMesh: return String(localized: "The 3MF file contains no valid mesh.")
         }
     }
 }
 
-/// Minimaler 3MF-Loader: entpackt das ZIP-Archiv und liest die Meshes
-/// aus der enthaltenen .model-XML.
+/// Minimal 3MF loader: unpacks the ZIP archive and reads the meshes
+/// from the contained .model XML.
 ///
-/// Einschränkung (MVP): Transformationen aus <build>-Items werden ignoriert,
-/// alle Objekte werden am Ursprung zusammengeführt.
+/// Limitation (MVP): transforms from <build> items are ignored;
+/// all objects are merged at the origin.
 enum ThreeMFParser {
     static func loadGeometry(from url: URL) throws -> SCNGeometry {
         let tempDir = FileManager.default.temporaryDirectory
@@ -36,7 +36,7 @@ enum ThreeMFParser {
         unzip.standardError = FileHandle.nullDevice
         try unzip.run()
         unzip.waitUntilExit()
-        // Exit-Code 1 = Warnungen, Inhalt wurde trotzdem entpackt.
+        // Exit code 1 = warnings; content was extracted anyway.
         guard unzip.terminationStatus <= 1 else { throw ThreeMFError.unzipFailed }
 
         var modelFile: URL?
@@ -60,7 +60,7 @@ enum ThreeMFParser {
         let element = SCNGeometryElement(indices: parser.indices, primitiveType: .triangles)
         let geometry = SCNGeometry(sources: [source], elements: [element])
 
-        // 3MF enthält keine Normalen – über ModelIO erzeugen.
+        // 3MF carries no normals — generate them via ModelIO.
         let mesh = MDLMesh(scnGeometry: geometry)
         mesh.addNormals(withAttributeNamed: MDLVertexAttributeNormal, creaseThreshold: 0.8)
         return SCNGeometry(mdlMesh: mesh)

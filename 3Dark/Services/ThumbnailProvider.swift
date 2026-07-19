@@ -3,9 +3,9 @@ import ImageIO
 import Metal
 import SceneKit
 
-/// Liefert Vorschaubilder: entweder ein vom Nutzer gewähltes Bild aus dem
-/// Modellordner (Frontmatter `vorschaubild`) oder ein offscreen gerendertes
-/// 3D-Thumbnail, das als `.thumbnail.png` im Modellordner abgelegt wird.
+/// Provides thumbnails: either a user-chosen image from the model folder
+/// (front matter `preview_image`) or an offscreen-rendered 3D thumbnail
+/// stored as `.thumbnail.png` in the model folder.
 actor ThumbnailProvider {
     static let shared = ThumbnailProvider()
 
@@ -30,12 +30,12 @@ actor ThumbnailProvider {
         return render(source: sourceURL, to: thumbnailURL)
     }
 
-    /// Herunterskalierte Bildvorschau, z. B. für Hover-Popover.
+    /// Downscaled image preview, e.g. for hover popovers.
     func imagePreview(for url: URL) -> NSImage? {
         loadImageThumbnail(url)
     }
 
-    /// Bilddatei als herunterskaliertes Thumbnail laden (mit Cache).
+    /// Loads an image file as a downscaled thumbnail (cached).
     private func loadImageThumbnail(_ url: URL) -> NSImage? {
         let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
         if let cached = imageCache[url.path], cached.modified == modified {
