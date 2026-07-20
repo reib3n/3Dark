@@ -6,6 +6,8 @@ struct SidebarView: View {
     @Binding var selectedCollection: String?
     @Binding var matchAll: Bool
     @Binding var minRating: Int
+    @Binding var noSourceOnly: Bool
+    @Binding var recentFirst: Bool
     @Binding var showingTrash: Bool
 
     var body: some View {
@@ -15,6 +17,7 @@ struct SidebarView: View {
                     selectedTags.removeAll()
                     selectedCollection = nil
                     minRating = 0
+                    noSourceOnly = false
                     showingTrash = false
                 } label: {
                     HStack {
@@ -96,6 +99,37 @@ struct SidebarView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+
+            Section {
+                Button {
+                    recentFirst.toggle()
+                } label: {
+                    HStack {
+                        Image(systemName: recentFirst ? "checkmark.circle.fill" : "clock")
+                            .foregroundStyle(recentFirst ? Color.accentColor : .secondary)
+                        Text("Recently added first")
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+                .help("Show recently added models on top")
+
+                Button {
+                    noSourceOnly.toggle()
+                } label: {
+                    HStack {
+                        Image(systemName: noSourceOnly ? "checkmark.circle.fill" : "link")
+                            .foregroundStyle(noSourceOnly ? Color.accentColor : .secondary)
+                        Text("Without source link")
+                        Spacer()
+                        Text("\(store.models.filter { $0.frontmatter.string("source").isEmpty }.count)")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+                .buttonStyle(.plain)
+                .help("Show only models without a source link")
             }
 
             Section {

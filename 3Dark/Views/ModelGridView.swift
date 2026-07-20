@@ -11,9 +11,11 @@ struct ModelBrowserView: View {
     let models: [Model3D]
     @Binding var selectedID: Model3D.ID?
     var isTrash = false
+    var recentIDs: Set<Model3D.ID> = []
     var onNewModel: () -> Void
 
     @AppStorage("ModelViewMode") private var viewModeRaw = ModelViewMode.grid.rawValue
+    @AppStorage(ArchiveStore.pollingEnabledKey) private var pollingEnabled = true
     @State private var pendingPermanentDelete: Model3D?
     @State private var showingBatchEnrichment = false
 
@@ -31,6 +33,15 @@ struct ModelBrowserView: View {
         .navigationTitle(isTrash ? String(localized: "Trash") : "3Dark")
         .toolbar {
             ToolbarItemGroup {
+                if !pollingEnabled {
+                    Button {
+                        store.reload()
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                    .help("Check the archive for changes now")
+                }
+
                 Picker("View", selection: $viewModeRaw) {
                     Label("Grid", systemImage: "square.grid.2x2")
                         .tag(ModelViewMode.grid.rawValue)
@@ -141,9 +152,13 @@ struct ModelBrowserView: View {
                 spacing: 16
             ) {
                 ForEach(models) { model in
-                    ModelGridCell(model: model, isSelected: model.id == selectedID)
-                        .onTapGesture { selectedID = model.id }
-                        .contextMenu { contextMenu(for: model) }
+                    ModelGridCell(
+                        model: model,
+                        isSelected: model.id == selectedID,
+                        isRecent: recentIDs.contains(model.id)
+                    )
+                    .onTapGesture { selectedID = model.id }
+                    .contextMenu { contextMenu(for: model) }
                 }
             }
             .padding()
@@ -153,7 +168,7 @@ struct ModelBrowserView: View {
     private var listView: some View {
         List(selection: $selectedID) {
             ForEach(models) { model in
-                ModelListRow(model: model)
+                ModelListRow(model: model, isRecent: recentIDs.contains(model.id))
                     .tag(model.id)
                     .contextMenu { contextMenu(for: model) }
             }
@@ -184,6 +199,7 @@ struct ModelBrowserView: View {
 private struct ModelGridCell: View {
     let model: Model3D
     let isSelected: Bool
+    var isRecent = false
     @State private var thumbnail: NSImage?
 
     var body: some View {
@@ -203,6 +219,12 @@ private struct ModelGridCell: View {
                 }
             }
             .aspectRatio(1, contentMode: .fit)
+            .overlay(alignment: .topTrailing) {
+                if isRecent {
+                    NewBadge()
+                        .padding(5)
+                }
+            }
 
             Text(model.title)
                 .font(.headline)
@@ -226,7 +248,10 @@ private struct ModelGridCell: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                .strokeBorder(
+                    isSelected ? Color.accentColor : (isRecent ? Color.accentColor.opacity(0.4) : Color.clear),
+                    lineWidth: isSelected ? 2 : 1.5
+                )
         )
         .contentShape(Rectangle())
         .task(id: [model.previewImageFile, model.primary3DFile]) {
@@ -235,8 +260,22 @@ private struct ModelGridCell: View {
     }
 }
 
+/// Accent-colored "New" marker for recently added models.
+private struct NewBadge: View {
+    var body: some View {
+        Text("New")
+            .font(.caption2.weight(.bold))
+            .textCase(.uppercase)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(Color.accentColor))
+            .foregroundStyle(.white)
+    }
+}
+
 private struct ModelListRow: View {
     let model: Model3D
+    var isRecent = false
     @State private var thumbnail: NSImage?
 
     var body: some View {
@@ -275,6 +314,9 @@ private struct ModelListRow: View {
 
             Spacer()
 
+            if isRecent {
+                NewBadge()
+            }
             if model.rating > 0 {
                 RatingStars(rating: model.rating)
             }

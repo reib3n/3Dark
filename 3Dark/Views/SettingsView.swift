@@ -46,6 +46,10 @@ enum AppLanguage: String, CaseIterable {
 struct SettingsView: View {
     @AppStorage("AppearanceMode") private var appearanceRaw = AppearanceMode.system.rawValue
     @AppStorage("AppLanguage") private var languageRaw = AppLanguage.initialValue.rawValue
+    @AppStorage("RecentMode") private var recentModeRaw = "days"
+    @AppStorage("RecentValue") private var recentValue = 14
+    @AppStorage(ArchiveStore.pollingEnabledKey) private var pollingEnabled = true
+    @AppStorage(ArchiveStore.pollingIntervalKey) private var pollingInterval = ArchiveStore.defaultPollInterval
 
     var body: some View {
         TabView {
@@ -81,6 +85,40 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.menu)
                 Text("Applies to the app’s interface.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Picker("“New” means:", selection: $recentModeRaw) {
+                    Text("Younger than X days").tag("days")
+                    Text("The last X models").tag("count")
+                }
+                .pickerStyle(.menu)
+                Stepper(value: $recentValue, in: 1...365) {
+                    HStack {
+                        Text("Value:")
+                        Text("\(recentValue)")
+                            .monospacedDigit()
+                    }
+                }
+                Text("Recently added models appear on top and get a “New” badge.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Check archive for changes automatically", isOn: $pollingEnabled)
+                if pollingEnabled {
+                    Stepper(value: $pollingInterval, in: 5...600, step: 5) {
+                        HStack {
+                            Text("Interval:")
+                            Text(verbatim: "\(pollingInterval) s")
+                                .monospacedDigit()
+                        }
+                    }
+                }
+                Text("File system events stay active either way; polling is an extra safety net for network and cloud volumes. With polling off, use the refresh button in the toolbar.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

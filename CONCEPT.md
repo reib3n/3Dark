@@ -113,7 +113,15 @@ Three-column standard layout (`NavigationSplitView`):
    clickable → AND/OR toggle.
 2. **Overview:** switchable between thumbnail grid and compact list
    (choice is remembered); search field (full text across title, tags,
-   collections, description).
+   collections, description). Default order puts recently added models
+   on top (accent "New" badge + border), the rest alphabetical; "new"
+   is configurable in Settings as "younger than X days" or "the last X
+   models" (default: 14 days), based on the `added` front matter field
+   (fallback: folder creation date). Any active filter restores plain
+   alphabetical order; the sidebar also offers a "without source link"
+   filter and the "recently added first" toggle. Sidebar polling is
+   backed by a cheap fingerprint pre-check (paths + mtimes) so the 15 s
+   poll skips re-parsing when nothing changed.
 3. **Detail view:**
    - 3D preview (SceneKit view: rotate, zoom, reset view;
      rendered material-neutral). For multi-part assemblies the combined
@@ -192,7 +200,11 @@ safety net (with confirmation).
   (string catalog, source language English)
 - SceneKit + ModelIO for STL preview; own 3MF loader
 - Own minimal front matter parser (round-trip safe, instead of Yams)
-- FSEvents for folder watching, plus 15 s polling as fallback
+- FSEvents for folder watching, plus optional polling as fallback
+  (Settings: on/off and interval 5–600 s, default 15 s; a cheap
+  path+mtime fingerprint skips re-parsing when nothing changed; with
+  polling off, a toolbar refresh button checks on demand — useful when
+  the archive lives on a File Provider volume like Nextcloud)
 - Index: built in memory at launch (parsing the front matter of all
   `model.md` files); fast enough at this archive scale, no SQLite needed
 - Distribution: locally signed app, no App Store; therefore no hard

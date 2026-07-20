@@ -163,6 +163,21 @@
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Abbrechen" } } }
     },
     "CC BY 4.0" : { "shouldTranslate" : false },
+    "Check archive for changes automatically" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Archiv automatisch auf Änderungen prüfen" } } }
+    },
+    "Check the archive for changes now" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Archiv jetzt auf Änderungen prüfen" } } }
+    },
+    "File system events stay active either way; polling is an extra safety net for network and cloud volumes. With polling off, use the refresh button in the toolbar." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Dateisystem-Ereignisse bleiben in jedem Fall aktiv; das Polling ist ein zusätzliches Sicherheitsnetz für Netz- und Cloud-Volumes. Bei deaktiviertem Polling steht der Aktualisieren-Button in der Toolbar bereit." } } }
+    },
+    "Interval:" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Intervall:" } } }
+    },
+    "Refresh" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktualisieren" } } }
+    },
     "Change Folder…" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ordner wechseln …" } } }
     },
@@ -290,6 +305,36 @@
     "Model name" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Name des Modells" } } }
     },
+    "“New” means:" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "„Neu“ bedeutet:" } } }
+    },
+    "New" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neu" } } }
+    },
+    "Recently added first" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neue zuerst" } } }
+    },
+    "Recently added models appear on top and get a “New” badge." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Zuletzt hinzugefügte Modelle stehen oben und bekommen ein „Neu“-Badge." } } }
+    },
+    "Show only models without a source link" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nur Modelle ohne Quell-Link anzeigen" } } }
+    },
+    "Show recently added models on top" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Zuletzt hinzugefügte Modelle oben anzeigen" } } }
+    },
+    "The last X models" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die letzten X Modelle" } } }
+    },
+    "Value:" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Wert:" } } }
+    },
+    "Without source link" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ohne Quell-Link" } } }
+    },
+    "Younger than X days" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Jünger als X Tage" } } }
+    },
     "New Model" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neues Modell" } } }
     },
@@ -312,6 +357,9 @@
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Düse" } } }
     },
     "OK" : { "shouldTranslate" : false },
+    "Open source page in browser" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Quellseite im Browser öffnen" } } }
+    },
     "Open in Cura" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "In Cura öffnen" } } }
     },

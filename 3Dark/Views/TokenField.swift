@@ -21,7 +21,54 @@ struct TokenField: View {
         suggestions.filter { !tokens.contains($0) }
     }
 
+    /// Typeahead matches while typing (contains, case-insensitive).
+    private var typeaheadMatches: [String] {
+        let query = input.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return [] }
+        return Array(
+            availableSuggestions
+                .filter { $0.localizedCaseInsensitiveContains(query) && $0.caseInsensitiveCompare(query) != .orderedSame }
+                .prefix(5)
+        )
+    }
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            tokenArea
+            if !typeaheadMatches.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(typeaheadMatches, id: \.self) { match in
+                        Button {
+                            add(match)
+                            input = ""
+                        } label: {
+                            Text(match)
+                                .font(.callout)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.primary.opacity(0.07)))
+                        }
+                        .buttonStyle(.plain)
+                        .help("Accept")
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.primary.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(Color.primary.opacity(0.12))
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { inputFocused = true }
+    }
+
+    private var tokenArea: some View {
         FlowLayout(spacing: 6) {
             ForEach(tokens, id: \.self) { token in
                 chip(token)
@@ -54,18 +101,6 @@ struct TokenField: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color.primary.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(Color.primary.opacity(0.12))
-        )
-        .contentShape(Rectangle())
-        .onTapGesture { inputFocused = true }
     }
 
     private func chip(_ token: String) -> some View {

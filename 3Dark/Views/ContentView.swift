@@ -7,16 +7,38 @@ struct ContentView: View {
     @State private var selectedCollection: String?
     @State private var matchAll = false
     @State private var minRating = 0
+    @State private var noSourceOnly = false
     @State private var searchText = ""
     @State private var selectedModelID: Model3D.ID?
     @State private var showingNewModelSheet = false
     @State private var showingTrash = false
+    @AppStorage("RecentFirst") private var recentFirst = true
+    @AppStorage("RecentMode") private var recentModeRaw = "days"
+    @AppStorage("RecentValue") private var recentValue = 14
+
+    private var recentIDs: Set<Model3D.ID> {
+        Model3D.recentIDs(in: store.models, mode: recentModeRaw, value: recentValue)
+    }
+
+    private var hasActiveFilters: Bool {
+        selectedCollection != nil || minRating > 0 || noSourceOnly
+            || !selectedTags.isEmpty || !searchText.isEmpty
+    }
 
     private var displayedModels: [Model3D] {
         if showingTrash {
             return store.trashedModels.filter { searchText.isEmpty || $0.matches(search: searchText) }
         }
-        return filteredModels
+        let filtered = filteredModels
+        // Default view: recently added on top (newest first), the rest
+        // stays alphabetical. Any active filter restores plain order.
+        guard recentFirst, !hasActiveFilters else { return filtered }
+        let recents = recentIDs
+        let newOnes = filtered
+            .filter { recents.contains($0.id) }
+            .sorted { ($0.addedDate ?? .distantPast) > ($1.addedDate ?? .distantPast) }
+        let rest = filtered.filter { !recents.contains($0.id) }
+        return newOnes + rest
     }
 
     private var filteredModels: [Model3D] {
@@ -26,6 +48,9 @@ struct ContentView: View {
             }
             if minRating > 0 {
                 guard model.rating >= minRating else { return false }
+            }
+            if noSourceOnly {
+                guard model.frontmatter.string("source").isEmpty else { return false }
             }
             if !selectedTags.isEmpty {
                 let modelTags = Set(model.tags)
@@ -53,6 +78,8 @@ struct ContentView: View {
                         selectedCollection: $selectedCollection,
                         matchAll: $matchAll,
                         minRating: $minRating,
+                        noSourceOnly: $noSourceOnly,
+                        recentFirst: $recentFirst,
                         showingTrash: $showingTrash
                     )
                     .navigationSplitViewColumnWidth(min: 180, ideal: 230)
@@ -61,6 +88,7 @@ struct ContentView: View {
                         models: displayedModels,
                         selectedID: $selectedModelID,
                         isTrash: showingTrash,
+                        recentIDs: showingTrash ? [] : recentIDs,
                         onNewModel: { showingNewModelSheet = true }
                     )
                     .navigationSplitViewColumnWidth(min: 280, ideal: 440)

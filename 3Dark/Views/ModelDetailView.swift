@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct ModelDetailView: View {
     @EnvironmentObject private var store: ArchiveStore
+    @Environment(\.openURL) private var openURL
     let model: Model3D
 
     @State private var title: String
@@ -176,6 +177,15 @@ struct ModelDetailView: View {
         store.trashedModels.contains { $0.id == model.id }
     }
 
+    /// Valid http(s) URL from the source field, if any.
+    private var sourceURL: URL? {
+        let trimmed = source.trimmingCharacters(in: .whitespaces)
+        guard let url = URL(string: trimmed),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" else { return nil }
+        return url
+    }
+
     /// The file the Cura button targets: the displayed file when Cura
     /// can open it, otherwise the first sliceable file of the model.
     private var curaFile: URL? {
@@ -188,6 +198,7 @@ struct ModelDetailView: View {
     private var metadataSection: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 8) {
             field("Title", text: $title)
+            aiRow("title", text: $title, showWhenFilled: true)
 
             GridRow {
                 Text("Tags")
@@ -219,7 +230,25 @@ struct ModelDetailView: View {
             }
             aiTagsRow
 
-            field("Source", text: $source, prompt: "https://…")
+            GridRow {
+                Text("Source")
+                    .gridColumnAlignment(.trailing)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    TextField("", text: $source, prompt: Text(verbatim: "https://…"))
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit(save)
+                    Button {
+                        if let url = sourceURL { openURL(url) }
+                    } label: {
+                        Image(systemName: "safari")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(sourceURL == nil)
+                    .help("Open source page in browser")
+                }
+                .frame(maxWidth: 420, alignment: .leading)
+            }
             field("Author", text: $author)
             aiRow("author", text: $author)
             field("License", text: $license, prompt: "CC BY 4.0")
@@ -301,11 +330,13 @@ struct ModelDetailView: View {
     }
 
     /// Suggestion row below a field: shown while the canonical field is
-    /// empty and an `ai_<key>` value exists.
+    /// empty and an `ai_<key>` value exists. `showWhenFilled` is for the
+    /// title, whose suggestion is a cleanup of an existing value.
     @ViewBuilder
-    private func aiRow(_ key: String, text: Binding<String>) -> some View {
+    private func aiRow(_ key: String, text: Binding<String>, showWhenFilled: Bool = false) -> some View {
         let suggestion = model.aiSuggestion(key)
-        if !suggestion.isEmpty, text.wrappedValue.trimmingCharacters(in: .whitespaces).isEmpty {
+        if !suggestion.isEmpty,
+           showWhenFilled || text.wrappedValue.trimmingCharacters(in: .whitespaces).isEmpty {
             GridRow {
                 Image(systemName: "sparkles")
                     .foregroundStyle(.orange)

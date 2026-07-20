@@ -7,6 +7,8 @@ struct Model3D: Identifiable, Equatable, Hashable {
     var body: String
     var files: [URL]
     var hasMarkdownFile: Bool
+    /// Folder creation date — fallback for models without an `added` field.
+    var addedFallbackDate: Date?
 
     var id: String { folderURL.path }
 
@@ -29,6 +31,23 @@ struct Model3D: Identifiable, Equatable, Hashable {
     var collections: [String] { frontmatter.list("collections") }
 
     var rating: Int { Int(frontmatter.string("rating")) ?? 0 }
+
+    private static let addedFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        return formatter
+    }()
+
+    /// When the model entered the archive: front matter `added`
+    /// (ISO date, written on create/import), else the folder's
+    /// creation date.
+    var addedDate: Date? {
+        let raw = frontmatter.string("added")
+        if !raw.isEmpty, let date = Self.addedFormatter.date(from: raw) {
+            return date
+        }
+        return addedFallbackDate
+    }
 
     /// The file used for preview and thumbnail rendering
     /// (preferred in the order of `previewExtensions`).
@@ -81,6 +100,22 @@ struct Model3D: Identifiable, Equatable, Hashable {
 
     static func isSliceable(_ url: URL) -> Bool {
         sliceableExtensions.contains(url.pathExtension.lowercased())
+    }
+
+    /// Which models count as "recently added" — either younger than
+    /// `value` days or the newest `value` models, per the setting.
+    static func recentIDs(in models: [Model3D], mode: String, value: Int, now: Date = Date()) -> Set<String> {
+        if mode == "count" {
+            let newest = models
+                .filter { $0.addedDate != nil }
+                .sorted { $0.addedDate! > $1.addedDate! }
+                .prefix(max(0, value))
+            return Set(newest.map(\.id))
+        }
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -max(1, value), to: now) else {
+            return []
+        }
+        return Set(models.filter { ($0.addedDate ?? .distantPast) >= cutoff }.map(\.id))
     }
 
     func matches(search: String) -> Bool {

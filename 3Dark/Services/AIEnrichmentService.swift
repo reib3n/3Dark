@@ -5,8 +5,10 @@ import Foundation
 struct AISuggestions {
     var fields: [String: String] = [:]
     var tags: [String] = []
+    /// Cleaned-up, human-readable version of the model's technical name.
+    var title: String?
 
-    var isEmpty: Bool { fields.isEmpty && tags.isEmpty }
+    var isEmpty: Bool { fields.isEmpty && tags.isEmpty && title == nil }
 }
 
 enum AIEnrichmentError: LocalizedError {
@@ -78,6 +80,7 @@ actor AIEnrichmentService {
         }
 
         let missingFields = Self.enrichableFields.filter { model.frontmatter.string($0).isEmpty }
+        let currentTitle = model.title
         let html = try await fetchPage(url)
 
         // Deterministic pass first: JSON-LD on portal pages is exact.
@@ -96,7 +99,8 @@ actor AIEnrichmentService {
             apiKey: apiKey,
             pageText: pageText,
             missingFields: stillMissing,
-            existingTags: model.tags
+            existingTags: model.tags,
+            currentTitle: currentTitle
         )
 
         for field in stillMissing {
@@ -115,7 +119,28 @@ actor AIEnrichmentService {
             tags = Array(tags.prefix(Self.maxTags))
         }
 
-        return AISuggestions(fields: fields, tags: tags)
+        var suggestions = AISuggestions(fields: fields, tags: tags)
+        if let rawTitle = raw["clean_title"] as? String {
+            suggestions.title = Self.validatedTitle(rawTitle, current: model.title)
+        }
+        return suggestions
+    }
+
+    /// A title suggestion must be a real improvement: plausible length,
+    /// no URL, no leftover separators, and different from the current name.
+    static func validatedTitle(_ value: String, current: String) -> String? {
+        var trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        while trimmed.contains("  ") {
+            trimmed = trimmed.replacingOccurrences(of: "  ", with: " ")
+        }
+        guard (3...80).contains(trimmed.count),
+              !trimmed.contains("\n"),
+              !trimmed.lowercased().contains("http"),
+              !trimmed.contains("_"),
+              trimmed.caseInsensitiveCompare(current) != .orderedSame else {
+            return nil
+        }
+        return trimmed
     }
 
     // MARK: - Page fetching & parsing
@@ -254,6 +279,7 @@ actor AIEnrichmentService {
             "layer_height": ["type": ["string", "null"]],
             "supports": ["type": ["string", "null"], "description": "\"yes\" or \"no\""],
             "tags": ["type": "array", "items": ["type": "string"]],
+            "clean_title": ["type": ["string", "null"]],
         ],
     ]
 
@@ -265,18 +291,23 @@ actor AIEnrichmentService {
     structures are needed. "nozzle" and "layer_height" are millimeter values \
     like "0.4". "license" is the license named on the page. "tags" are up to 6 \
     short lowercase keywords describing the model, based on the page content; \
-    use an empty array if unsure.
+    use an empty array if unsure. "clean_title" is a clean, human-readable \
+    version of the current model name: natural word order, no underscores, \
+    file suffixes, or version noise; keep the original language; null if the \
+    current name is already clean.
     """
 
     private func callClaude(
         apiKey: String,
         pageText: String,
         missingFields: [String],
-        existingTags: [String]
+        existingTags: [String],
+        currentTitle: String
     ) async throws -> [String: Any] {
         let userContent = """
-        Fields to extract (leave all others null): \(missingFields.isEmpty ? "none — only suggest tags" : missingFields.joined(separator: ", "))
+        Fields to extract (leave all others null): \(missingFields.isEmpty ? "none — only suggest tags and clean_title" : missingFields.joined(separator: ", "))
         Existing tags (do not repeat): \(existingTags.isEmpty ? "none" : existingTags.joined(separator: ", "))
+        Current model name (for clean_title): \(currentTitle)
 
         Page text:
         \(pageText)

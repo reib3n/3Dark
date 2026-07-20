@@ -18,12 +18,16 @@ final class ArchiveStore: ObservableObject {
 
     private var watcher: FolderWatcher?
     private var pollTimer: Timer?
+    private var lastFingerprint: Int?
+    private var activePollingConfig: (enabled: Bool, interval: TimeInterval)?
+    private var defaultsObserver: NSObjectProtocol?
     private static let defaultsKey = "ArchiveRootPath"
 
-    /// Fallback interval for re-reading the archive in addition to
-    /// FSEvents (e.g. for network/sync volumes where FSEvents is
-    /// unreliable).
-    private static let pollInterval: TimeInterval = 15
+    /// Polling is the fallback next to FSEvents (useful on network and
+    /// cloud volumes) — user-configurable, can be turned off entirely.
+    static let pollingEnabledKey = "PollingEnabled"
+    static let pollingIntervalKey = "PollingInterval"
+    static let defaultPollInterval = 15
 
     init() {
         if let path = UserDefaults.standard.string(forKey: Self.defaultsKey) {
@@ -33,6 +37,15 @@ final class ArchiveStore: ObservableObject {
                isDirectory.boolValue {
                 setRoot(url)
             }
+        }
+        // React to polling settings changes; reconfigure is a no-op
+        // unless the effective values actually changed.
+        defaultsObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.reconfigurePolling() }
         }
     }
 
@@ -56,11 +69,28 @@ final class ArchiveStore: ObservableObject {
         watcher = FolderWatcher(url: url) { [weak self] in
             Task { @MainActor in self?.reload() }
         }
+        activePollingConfig = nil
+        reconfigurePolling()
+        reload()
+    }
+
+    private func reconfigurePolling() {
+        guard rootURL != nil else { return }
+        let defaults = UserDefaults.standard
+        let enabled = defaults.object(forKey: Self.pollingEnabledKey) as? Bool ?? true
+        let storedInterval = defaults.integer(forKey: Self.pollingIntervalKey)
+        let interval = TimeInterval(storedInterval > 0 ? storedInterval : Self.defaultPollInterval)
+
+        if let active = activePollingConfig, active.enabled == enabled, active.interval == interval {
+            return
+        }
+        activePollingConfig = (enabled, interval)
         pollTimer?.invalidate()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
+        pollTimer = nil
+        guard enabled else { return }
+        pollTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.reload() }
         }
-        reload()
     }
 
     // MARK: - Loading
@@ -70,6 +100,15 @@ final class ArchiveStore: ObservableObject {
             models = []
             return
         }
+        // Cheap pre-check: hash paths + modification dates only. Skips
+        // the expensive full re-parse when nothing changed — this is
+        // what keeps the 15 s polling nearly free on quiet archives.
+        let fingerprint = Self.archiveFingerprint(of: rootURL)
+        if fingerprint == lastFingerprint {
+            return
+        }
+        lastFingerprint = fingerprint
+
         let fileManager = FileManager.default
         let contents = (try? fileManager.contentsOfDirectory(
             at: rootURL,
@@ -102,6 +141,23 @@ final class ArchiveStore: ObservableObject {
         if trashed != trashedModels {
             trashedModels = trashed
         }
+    }
+
+    private static func archiveFingerprint(of rootURL: URL) -> Int {
+        var hasher = Hasher()
+        if let enumerator = FileManager.default.enumerator(
+            at: rootURL,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) {
+            for case let url as URL in enumerator {
+                hasher.combine(url.path)
+                if let modified = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate {
+                    hasher.combine(modified.timeIntervalSinceReferenceDate)
+                }
+            }
+        }
+        return hasher.finalize()
     }
 
     private func loadModel(at folder: URL) -> Model3D {
@@ -144,7 +200,8 @@ final class ArchiveStore: ObservableObject {
             frontmatter: frontmatter,
             body: body,
             files: files,
-            hasMarkdownFile: hasMarkdown
+            hasMarkdownFile: hasMarkdown,
+            addedFallbackDate: (try? folder.resourceValues(forKeys: [.creationDateKey]))?.creationDate
         )
     }
 
@@ -181,6 +238,7 @@ final class ArchiveStore: ObservableObject {
             var frontmatter = Frontmatter()
             frontmatter.setString("title", folder.lastPathComponent)
             frontmatter.tags = []
+            frontmatter.setString("added", Self.todayISO())
             let body = "## Description\n\n\n## Print Notes\n"
             try frontmatter.serialized(body: body)
                 .write(to: folder.appendingPathComponent("model.md"), atomically: true, encoding: .utf8)
@@ -257,6 +315,14 @@ final class ArchiveStore: ObservableObject {
             m.frontmatter.setList("ai_tags", newTags)
             foundSuggestions = true
         }
+        // Title cleanup is the one suggestion allowed next to a filled
+        // field — that's its whole point. Accepting stays manual.
+        if let title = suggestions.title,
+           title.caseInsensitiveCompare(m.title) != .orderedSame,
+           m.frontmatter.string("ai_title") != title {
+            m.frontmatter.setString("ai_title", title)
+            foundSuggestions = true
+        }
         // Always record the check — batch runs use this to skip models
         // that have already been looked at, suggestions or not.
         let formatter = ISO8601DateFormatter()
@@ -308,6 +374,12 @@ final class ArchiveStore: ObservableObject {
         } catch {
             errorMessage = String(localized: "Could not delete model: \(error.localizedDescription)")
         }
+    }
+
+    static func todayISO() -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        return formatter.string(from: Date())
     }
 
     // MARK: - Tags & collections
