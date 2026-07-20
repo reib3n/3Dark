@@ -24,6 +24,14 @@ enum GeometryLoader {
         makeScene(around: try loadModelNode(from: url))
     }
 
+    /// Geometry at its original scale and in the file's own axes — used
+    /// for measuring. The display path normalizes size and rotates Z-up
+    /// files, both of which would falsify the numbers; a node's own
+    /// `boundingBox` is unaffected by the rotation we set on it.
+    static func loadRawNode(from url: URL) throws -> SCNNode {
+        try loadModelNode(from: url)
+    }
+
     /// Combined view: all parts true to scale next to each other on a
     /// shared ground plane (assuming identical units).
     static func loadCombinedScene(from urls: [URL]) throws -> SCNScene {

@@ -111,7 +111,10 @@ Three-column standard layout (`NavigationSplitView`):
 1. **Sidebar:** "All Models", collections, tag list with counts, rating
    filter ("N stars and up"), later smart folders. Multiple tags
    clickable → AND/OR toggle.
-2. **Overview:** switchable between thumbnail grid and compact list
+2. **Overview:** multi-select (⌘-click in the grid, native multi-select
+   in the list) — with several models selected the detail column turns
+   into batch actions: add a tag or collection to all of them, or trash
+   them together. Switchable between thumbnail grid and compact list
    (choice is remembered); search field (full text across title, tags,
    collections, description). Default order puts recently added models
    on top (accent "New" badge + border), the rest alphabetical; "new"
@@ -134,6 +137,12 @@ Three-column standard layout (`NavigationSplitView`):
    - Metadata form (front matter fields); Enter commits changes.
      Tags & collections as chip fields: removable chips, new values via
      Enter/comma, existing values selectable from the plus menu.
+   - Print history: each print recorded as a row (date, material, printer,
+     settings, result, note) in a `## Print Log` markdown table inside
+     the body — form-editable in the app, readable without it
+   - Dimensions: bounding box measured from the geometry on first view
+     and cached in `dimensions`; flagged against the build volume from
+     Settings (too large / fits only when rotated)
    - Markdown area: rendered display, switchable to editor
    - File list with "Show in Finder" and **"Open in Cura"**; image files
      show a hover preview and can be set as the thumbnail
@@ -185,6 +194,27 @@ including one with zero findings — is recorded via `ai_updated`, and
 already-checked models are skipped on later batch runs; the single-model
 ✨ action can always re-check.
 
+**Duplicate detection:** SHA-256 over the 3D files, so copies are found
+regardless of file or folder naming. Runs automatically for freshly
+imported models — findings open a keep-or-discard dialog per import
+(discarding removes only the new archive copy via the macOS Trash; the
+source outside the archive is never touched) — and on demand via the
+toolbar's
+"Find Duplicates" scan, which lists the affected groups with reveal and
+trash actions. Never runs in the background; hashes are cached per
+path + size + mtime so repeat scans of an unchanged archive are cheap.
+The cache persists across launches as a single JSON file in
+`~/Library/Application Support/3Dark/` — deliberately **not** in the
+model.md files: hashes are derived data, would need size+mtime beside
+them to stay valid, break down for multi-file assemblies under the flat
+front matter parser, and rewriting every model.md would cause sync
+traffic on cloud volumes. Stale entries are pruned on save.
+
+**AI suggestion indicator:** models carrying `ai_*` fields that have not
+been accepted or dismissed show a ✨ badge in grid and list, and the
+sidebar offers a matching filter (with count) as a review queue.
+`ai_updated` alone is only a check marker and does not count.
+
 **Trash:** deleting a model moves its folder into `deleted/` inside the
 archive root (excluded from the model list). The sidebar's trash entry
 shows the deleted models; they can be restored (moved back) or deleted
@@ -224,8 +254,8 @@ safety net (with confirmation).
 
 ## Later (Roadmap)
 
-- **v1.1:** ~~ZIP import via drag & drop~~ (implemented),
-  duplicate detection via file hash
+- **v1.1:** ~~ZIP import via drag & drop~~, ~~duplicate detection via
+  file hash~~ (both implemented)
 - **v1.2:** archive G-code + read metadata (print time, filament),
   print history as a table in the markdown
 - **v1.3:** smart folders (saved filters), rating/statistics view

@@ -72,6 +72,127 @@
     "Enriching %lld of %lld…" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ergänze %1$lld von %2$lld …" } } }
     },
+    "%lld models are moved to the deleted folder inside the archive." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Modelle werden in den Ordner „deleted“ im Archiv verschoben." } } }
+    },
+    "%lld models selected" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Modelle ausgewählt" } } }
+    },
+    "Add Print" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Druck erfassen" } } }
+    },
+    "Add tag to all" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tag zu allen hinzufügen" } } }
+    },
+    "Add to collection" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Zu Sammlung hinzufügen" } } }
+    },
+    "Apply" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Anwenden" } } }
+    },
+    "Build volume (mm):" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Bauraum (mm):" } } }
+    },
+    "Date" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Datum" } } }
+    },
+    "Dimensions" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Abmessungen" } } }
+    },
+    "Fits only when rotated" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Passt nur gedreht" } } }
+    },
+    "Larger than the build volume" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Größer als der Bauraum" } } }
+    },
+    "Models larger than this are flagged in the detail view." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Größere Modelle werden in der Detailansicht markiert." } } }
+    },
+    "Move all to Trash" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle in den Papierkorb" } } }
+    },
+    "Move all to Trash?" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle in den Papierkorb legen?" } } }
+    },
+    "Multiple Selection" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Mehrfachauswahl" } } }
+    },
+    "No prints recorded yet. Note material, settings and outcome here — that's the knowledge you'll want back in a year." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch keine Drucke erfasst. Halte hier Material, Einstellungen und Ergebnis fest — genau das willst du in einem Jahr wieder wissen." } } }
+    },
+    "Notes" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Notiz" } } }
+    },
+    "OK / failed" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "OK / fehlgeschlagen" } } }
+    },
+    "Print History" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Druckhistorie" } } }
+    },
+    "Printer" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Drucker" } } }
+    },
+    "Result" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ergebnis" } } }
+    },
+    "Settings" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen" } } }
+    },
+    "What to remember next time" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Was du nächstes Mal wissen willst" } } }
+    },
+    "0.2 mm, 20%" : { "shouldTranslate" : false },
+    "Already in archive: %@" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Bereits im Archiv: %@" } } }
+    },
+    "Discard All" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle verwerfen" } } }
+    },
+    "Discard Import" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Import verwerfen" } } }
+    },
+    "Duplicates Imported" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Duplikate importiert" } } }
+    },
+    "Keep" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Behalten" } } }
+    },
+    "Keep All" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle behalten" } } }
+    },
+    "These imports have the same file contents as models already in your archive. Discarding removes only the new copy — the original files you imported from stay untouched." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Diese Importe haben denselben Dateiinhalt wie bereits vorhandene Modelle. Verwerfen entfernt nur die neue Kopie — die Originaldateien, aus denen du importiert hast, bleiben unangetastet." } } }
+    },
+    "%lld groups of models share identical files." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Gruppen von Modellen teilen sich identische Dateien." } } }
+    },
+    "Compare file contents to find models stored twice" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Dateiinhalte vergleichen, um doppelt abgelegte Modelle zu finden" } } }
+    },
+    "Analyzed %lld 3D files — %lld newly hashed, %lld from cache." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld 3D-Dateien analysiert — %2$lld neu gehasht, %3$lld aus dem Cache." } } }
+    },
+    "Hashes and compares every 3D file in the archive — including all existing models, which are hashed on the first run. Large archives on network or cloud volumes can take a moment." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Hasht und vergleicht jede 3D-Datei im Archiv — einschließlich aller bestehenden Modelle, die beim ersten Lauf komplett gehasht werden. Bei großen Archiven auf Netz- oder Cloud-Volumes kann das einen Moment dauern." } } }
+    },
+    "Find Duplicates" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Duplikate finden" } } }
+    },
+    "Has unreviewed AI suggestions" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Hat ungeprüfte KI-Vorschläge" } } }
+    },
+    "No duplicates found." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine Duplikate gefunden." } } }
+    },
+    "Scanning %lld of %lld…" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Prüfe %1$lld von %2$lld …" } } }
+    },
+    "Show only models with unreviewed AI suggestions" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nur Modelle mit ungeprüften KI-Vorschlägen anzeigen" } } }
+    },
+    "With AI suggestions" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Mit KI-Vorschlägen" } } }
+    },
     "Failed: %lld" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Fehlgeschlagen: %lld" } } }
     },
@@ -397,8 +518,8 @@
     "Select a model or create a new one with +." : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Wähle ein Modell aus oder lege mit + ein neues an." } } }
     },
-    "Select ZIP files or folders — each becomes its own model." : {
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "ZIP-Dateien oder Ordner auswählen — jede Auswahl wird ein eigenes Modell." } } }
+    "Select ZIP files or folders — each becomes its own model. Hold ⌘ to select several." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "ZIP-Dateien oder Ordner auswählen — jede Auswahl wird ein eigenes Modell. Mit ⌘ lassen sich mehrere auswählen." } } }
     },
     "Send the displayed 3D file to Cura" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Angezeigte 3D-Datei an Cura übergeben" } } }

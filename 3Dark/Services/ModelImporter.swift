@@ -197,9 +197,7 @@ enum ModelImporter {
         }
         if frontmatter["tags"] == nil { frontmatter.tags = [] }
         if frontmatter["added"] == nil {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withFullDate]
-            frontmatter.setString("added", formatter.string(from: Date()))
+            frontmatter.setString("added", Model3D.addedFormatter.string(from: Date()))
         }
         if frontmatter["source"] == nil, let source = extracted.source {
             frontmatter.setString("source", source)

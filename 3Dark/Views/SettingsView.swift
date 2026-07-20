@@ -50,6 +50,9 @@ struct SettingsView: View {
     @AppStorage("RecentValue") private var recentValue = 14
     @AppStorage(ArchiveStore.pollingEnabledKey) private var pollingEnabled = true
     @AppStorage(ArchiveStore.pollingIntervalKey) private var pollingInterval = ArchiveStore.defaultPollInterval
+    @AppStorage("BedX") private var bedX = 220.0
+    @AppStorage("BedY") private var bedY = 220.0
+    @AppStorage("BedZ") private var bedZ = 250.0
 
     var body: some View {
         TabView {
@@ -103,6 +106,22 @@ struct SettingsView: View {
                     }
                 }
                 Text("Recently added models appear on top and get a “New” badge.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                LabeledContent("Build volume (mm):") {
+                    HStack(spacing: 6) {
+                        TextField("X", value: $bedX, format: .number).frame(width: 60)
+                        Text(verbatim: "×")
+                        TextField("Y", value: $bedY, format: .number).frame(width: 60)
+                        Text(verbatim: "×")
+                        TextField("Z", value: $bedZ, format: .number).frame(width: 60)
+                    }
+                    .textFieldStyle(.roundedBorder)
+                }
+                Text("Models larger than this are flagged in the detail view.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

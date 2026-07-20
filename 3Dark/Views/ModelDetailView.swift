@@ -25,6 +25,11 @@ struct ModelDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var isEnriching = false
     @State private var enrichmentMessage: String?
+    @State private var printLogEntries: [PrintLogEntry]
+    @State private var measured: ModelDimensions?
+    @AppStorage("BedX") private var bedX = 220.0
+    @AppStorage("BedY") private var bedY = 220.0
+    @AppStorage("BedZ") private var bedZ = 250.0
 
     init(model: Model3D) {
         self.model = model
@@ -42,6 +47,8 @@ struct ModelDetailView: View {
         _printed = State(initialValue: fm.string("printed"))
         _rating = State(initialValue: Int(fm.string("rating")) ?? 0)
         _bodyText = State(initialValue: model.body)
+        _printLogEntries = State(initialValue: PrintLog.parse(body: model.body))
+        _measured = State(initialValue: model.dimensions)
     }
 
     private var appliedModel: Model3D {
@@ -74,6 +81,11 @@ struct ModelDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     metadataSection
+                    Divider()
+                    PrintLogSection(entries: $printLogEntries) {
+                        bodyText = PrintLog.write(printLogEntries, into: bodyText)
+                        save()
+                    }
                     Divider()
                     markdownSection
                     Divider()
@@ -171,6 +183,18 @@ struct ModelDetailView: View {
             Text("“\(model.title)” will be moved to the macOS Trash.")
         }
         .navigationTitle(title)
+        .task(id: model.primary3DFile) {
+            // Measure once and cache in the front matter; existing
+            // values (including hand-edited ones) are never replaced.
+            guard measured == nil, let file = model.primary3DFile else { return }
+            let dimensions = await Task.detached(priority: .utility) {
+                DimensionsReader.measure(fileURL: file)
+            }.value
+            if let dimensions {
+                measured = dimensions
+                store.storeDimensions(dimensions, for: model)
+            }
+        }
     }
 
     private var isTrashed: Bool {
@@ -268,6 +292,28 @@ struct ModelDetailView: View {
             field("Supports", text: $supports, prompt: "yes / no")
             aiRow("supports", text: $supports)
             field("Printed on", text: $printed, prompt: "YYYY-MM-DD")
+
+            if let dimensions = measured {
+                GridRow {
+                    Text("Dimensions")
+                        .gridColumnAlignment(.trailing)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text(dimensions.displayValue)
+                            .monospacedDigit()
+                        let bed = ModelDimensions(x: bedX, y: bedY, z: bedZ)
+                        if !dimensions.fits(bed: bed) {
+                            Label("Larger than the build volume", systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        } else if dimensions.needsRotation(bed: bed) {
+                            Label("Fits only when rotated", systemImage: "rotate.3d")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
 
             GridRow {
                 Text("Rating")

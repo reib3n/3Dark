@@ -9,7 +9,7 @@ enum ModelViewMode: String, CaseIterable {
 struct ModelBrowserView: View {
     @EnvironmentObject private var store: ArchiveStore
     let models: [Model3D]
-    @Binding var selectedID: Model3D.ID?
+    @Binding var selection: Set<Model3D.ID>
     var isTrash = false
     var recentIDs: Set<Model3D.ID> = []
     var onNewModel: () -> Void
@@ -18,6 +18,7 @@ struct ModelBrowserView: View {
     @AppStorage(ArchiveStore.pollingEnabledKey) private var pollingEnabled = true
     @State private var pendingPermanentDelete: Model3D?
     @State private var showingBatchEnrichment = false
+    @State private var showingDuplicates = false
 
     private var viewMode: ModelViewMode {
         ModelViewMode(rawValue: viewModeRaw) ?? .grid
@@ -52,6 +53,13 @@ struct ModelBrowserView: View {
                 .help("Switch between grid and list view")
 
                 if !isTrash {
+                    Button {
+                        showingDuplicates = true
+                    } label: {
+                        Label("Find Duplicates", systemImage: "doc.on.doc")
+                    }
+                    .help("Compare file contents to find models stored twice")
+
                     Button {
                         showingBatchEnrichment = true
                     } label: {
@@ -94,6 +102,9 @@ struct ModelBrowserView: View {
         }
         .sheet(isPresented: $showingBatchEnrichment) {
             BatchEnrichmentView()
+        }
+        .sheet(isPresented: $showingDuplicates) {
+            DuplicatesView()
         }
         .dropDestination(for: URL.self) { urls, _ in
             guard !isTrash else { return false }
@@ -154,10 +165,10 @@ struct ModelBrowserView: View {
                 ForEach(models) { model in
                     ModelGridCell(
                         model: model,
-                        isSelected: model.id == selectedID,
+                        isSelected: selection.contains(model.id),
                         isRecent: recentIDs.contains(model.id)
                     )
-                    .onTapGesture { selectedID = model.id }
+                    .onTapGesture { toggle(model, extending: NSEvent.modifierFlags.contains(.command)) }
                     .contextMenu { contextMenu(for: model) }
                 }
             }
@@ -165,8 +176,21 @@ struct ModelBrowserView: View {
         }
     }
 
+    /// ⌘-click extends the selection, a plain click replaces it.
+    private func toggle(_ model: Model3D, extending: Bool) {
+        if extending {
+            if selection.contains(model.id) {
+                selection.remove(model.id)
+            } else {
+                selection.insert(model.id)
+            }
+        } else {
+            selection = [model.id]
+        }
+    }
+
     private var listView: some View {
-        List(selection: $selectedID) {
+        List(selection: $selection) {
             ForEach(models) { model in
                 ModelListRow(model: model, isRecent: recentIDs.contains(model.id))
                     .tag(model.id)
@@ -181,7 +205,7 @@ struct ModelBrowserView: View {
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
-        panel.message = String(localized: "Select ZIP files or folders — each becomes its own model.")
+        panel.message = String(localized: "Select ZIP files or folders — each becomes its own model. Hold ⌘ to select several.")
         panel.prompt = String(localized: "Import")
         if panel.runModal() == .OK {
             importAndSelect(panel.urls)
@@ -191,7 +215,7 @@ struct ModelBrowserView: View {
     private func importAndSelect(_ urls: [URL]) {
         let imported = store.importModels(from: urls)
         if let last = imported.last {
-            selectedID = last.id
+            selection = [last.id]
         }
     }
 }
@@ -220,10 +244,15 @@ private struct ModelGridCell: View {
             }
             .aspectRatio(1, contentMode: .fit)
             .overlay(alignment: .topTrailing) {
-                if isRecent {
-                    NewBadge()
-                        .padding(5)
+                VStack(alignment: .trailing, spacing: 4) {
+                    if isRecent {
+                        NewBadge()
+                    }
+                    if model.hasPendingAISuggestions {
+                        AISuggestionBadge()
+                    }
                 }
+                .padding(5)
             }
 
             Text(model.title)
@@ -273,6 +302,18 @@ private struct NewBadge: View {
     }
 }
 
+/// Marks models with AI suggestions that are still unaccepted.
+private struct AISuggestionBadge: View {
+    var body: some View {
+        Image(systemName: "sparkles")
+            .font(.caption2.weight(.bold))
+            .padding(4)
+            .background(Circle().fill(Color.orange))
+            .foregroundStyle(.white)
+            .help("Has unreviewed AI suggestions")
+    }
+}
+
 private struct ModelListRow: View {
     let model: Model3D
     var isRecent = false
@@ -314,6 +355,9 @@ private struct ModelListRow: View {
 
             Spacer()
 
+            if model.hasPendingAISuggestions {
+                AISuggestionBadge()
+            }
             if isRecent {
                 NewBadge()
             }

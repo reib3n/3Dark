@@ -8,8 +8,9 @@ struct ContentView: View {
     @State private var matchAll = false
     @State private var minRating = 0
     @State private var noSourceOnly = false
+    @State private var pendingAIOnly = false
     @State private var searchText = ""
-    @State private var selectedModelID: Model3D.ID?
+    @State private var selection: Set<Model3D.ID> = []
     @State private var showingNewModelSheet = false
     @State private var showingTrash = false
     @AppStorage("RecentFirst") private var recentFirst = true
@@ -21,7 +22,7 @@ struct ContentView: View {
     }
 
     private var hasActiveFilters: Bool {
-        selectedCollection != nil || minRating > 0 || noSourceOnly
+        selectedCollection != nil || minRating > 0 || noSourceOnly || pendingAIOnly
             || !selectedTags.isEmpty || !searchText.isEmpty
     }
 
@@ -36,7 +37,7 @@ struct ContentView: View {
         let recents = recentIDs
         let newOnes = filtered
             .filter { recents.contains($0.id) }
-            .sorted { ($0.addedDate ?? .distantPast) > ($1.addedDate ?? .distantPast) }
+            .sorted { $0.addedSortKey > $1.addedSortKey }
         let rest = filtered.filter { !recents.contains($0.id) }
         return newOnes + rest
     }
@@ -51,6 +52,9 @@ struct ContentView: View {
             }
             if noSourceOnly {
                 guard model.frontmatter.string("source").isEmpty else { return false }
+            }
+            if pendingAIOnly {
+                guard model.hasPendingAISuggestions else { return false }
             }
             if !selectedTags.isEmpty {
                 let modelTags = Set(model.tags)
@@ -79,6 +83,7 @@ struct ContentView: View {
                         matchAll: $matchAll,
                         minRating: $minRating,
                         noSourceOnly: $noSourceOnly,
+                        pendingAIOnly: $pendingAIOnly,
                         recentFirst: $recentFirst,
                         showingTrash: $showingTrash
                     )
@@ -86,14 +91,20 @@ struct ContentView: View {
                 } content: {
                     ModelBrowserView(
                         models: displayedModels,
-                        selectedID: $selectedModelID,
+                        selection: $selection,
                         isTrash: showingTrash,
                         recentIDs: showingTrash ? [] : recentIDs,
                         onNewModel: { showingNewModelSheet = true }
                     )
                     .navigationSplitViewColumnWidth(min: 280, ideal: 440)
                 } detail: {
-                    if let model = (store.models + store.trashedModels).first(where: { $0.id == selectedModelID }) {
+                    if selection.count > 1 {
+                        BatchActionsView(
+                            models: (store.models + store.trashedModels).filter { selection.contains($0.id) },
+                            onDone: { selection.removeAll() }
+                        )
+                    } else if let id = selection.first,
+                              let model = (store.models + store.trashedModels).first(where: { $0.id == id }) {
                         ModelDetailView(model: model)
                             .id(model.id)
                     } else {
@@ -107,10 +118,16 @@ struct ContentView: View {
                 .searchable(text: $searchText, placement: .toolbar, prompt: "Title, tags, description…")
             }
         }
+        .sheet(isPresented: Binding(
+            get: { !store.pendingImportDuplicates.isEmpty },
+            set: { if !$0 { store.pendingImportDuplicates.removeAll() } }
+        )) {
+            ImportDuplicatesView()
+        }
         .sheet(isPresented: $showingNewModelSheet) {
             NewModelSheet { name in
                 if let model = store.createModel(named: name) {
-                    selectedModelID = model.id
+                    selection = [model.id]
                 }
             }
         }

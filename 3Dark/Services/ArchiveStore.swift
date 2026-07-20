@@ -12,6 +12,15 @@ final class ArchiveStore: ObservableObject {
     @Published private(set) var trashedModels: [Model3D] = []
     @Published private(set) var rootURL: URL?
     @Published var errorMessage: String?
+    /// Freshly imported models that duplicate existing ones — the UI
+    /// asks whether to keep or discard each of them.
+    @Published var pendingImportDuplicates: [ImportDuplicate] = []
+
+    struct ImportDuplicate: Identifiable {
+        let imported: Model3D
+        let matches: [Model3D]
+        var id: String { imported.id }
+    }
 
     /// Folder inside the archive root where deleted models are parked.
     static let trashFolderName = "deleted"
@@ -94,6 +103,14 @@ final class ArchiveStore: ObservableObject {
     }
 
     // MARK: - Loading
+
+    /// Full reload regardless of the fingerprint — used after our own
+    /// mutations (import, create, trash) so the UI, including the
+    /// "recently added" set, is guaranteed fresh.
+    func forceReload() {
+        lastFingerprint = nil
+        reload()
+    }
 
     func reload() {
         guard let rootURL else {
@@ -242,7 +259,7 @@ final class ArchiveStore: ObservableObject {
             let body = "## Description\n\n\n## Print Notes\n"
             try frontmatter.serialized(body: body)
                 .write(to: folder.appendingPathComponent("model.md"), atomically: true, encoding: .utf8)
-            reload()
+            forceReload()
             return models.first { $0.folderURL.path == folder.path }
         } catch {
             errorMessage = String(localized: "Could not create model: \(error.localizedDescription)")
@@ -274,11 +291,29 @@ final class ArchiveStore: ObservableObject {
             }
         }
 
-        reload()
-        if !notes.isEmpty {
-            errorMessage = notes.joined(separator: "\n")
+        forceReload()
+        let imported = models.filter { importedPaths.contains($0.id) }
+
+        // Duplicate check on the freshly imported models only — the
+        // files are hot in cache here, so this costs little. Findings
+        // go to the UI as a keep-or-discard decision.
+        let existing = models.filter { !importedPaths.contains($0.id) }
+        Task {
+            var found: [ImportDuplicate] = []
+            for model in imported {
+                let matches = await DuplicateFinder.shared.duplicates(of: model, in: existing)
+                if !matches.isEmpty {
+                    found.append(ImportDuplicate(imported: model, matches: matches))
+                }
+            }
+            await MainActor.run {
+                if !notes.isEmpty {
+                    self.errorMessage = notes.joined(separator: "\n")
+                }
+                self.pendingImportDuplicates = found
+            }
         }
-        return models.filter { importedPaths.contains($0.id) }
+        return imported
     }
 
     func importFiles(_ urls: [URL], into model: Model3D) {
@@ -292,7 +327,45 @@ final class ArchiveStore: ObservableObject {
                 errorMessage = String(localized: "Could not copy \(url.lastPathComponent): \(error.localizedDescription)")
             }
         }
-        reload()
+        forceReload()
+    }
+
+    // MARK: - Batch actions
+
+    /// Adds a tag to several models at once; existing tags are kept.
+    func addTag(_ tag: String, to selection: [Model3D]) {
+        let clean = tag.trimmingCharacters(in: .whitespaces)
+        guard !clean.isEmpty else { return }
+        for model in selection where !model.tags.contains(clean) {
+            var m = model
+            m.frontmatter.tags = m.tags + [clean]
+            save(m)
+        }
+    }
+
+    /// Adds a collection to several models at once.
+    func addCollection(_ collection: String, to selection: [Model3D]) {
+        let clean = collection.trimmingCharacters(in: .whitespaces)
+        guard !clean.isEmpty else { return }
+        for model in selection where !model.collections.contains(clean) {
+            var m = model
+            m.frontmatter.setList("collections", m.collections + [clean])
+            save(m)
+        }
+    }
+
+    func moveToTrash(_ selection: [Model3D]) {
+        for model in selection {
+            moveToTrash(model)
+        }
+    }
+
+    /// Stores measured dimensions unless the user already set a value.
+    func storeDimensions(_ dimensions: ModelDimensions, for model: Model3D) {
+        guard model.frontmatter.string("dimensions").isEmpty else { return }
+        var m = model
+        m.frontmatter.setString("dimensions", dimensions.frontmatterValue)
+        save(m)
     }
 
     // MARK: - AI enrichment
@@ -332,6 +405,23 @@ final class ArchiveStore: ObservableObject {
         return foundSuggestions
     }
 
+    /// Undoes a single import: the freshly created copy goes to the
+    /// macOS Trash. The original source outside the archive is never
+    /// touched, so nothing is lost.
+    func discardImport(_ model: Model3D) {
+        do {
+            do {
+                try FileManager.default.trashItem(at: model.folderURL, resultingItemURL: nil)
+            } catch {
+                try FileManager.default.removeItem(at: model.folderURL)
+            }
+            pendingImportDuplicates.removeAll { $0.imported.id == model.id }
+            forceReload()
+        } catch {
+            errorMessage = String(localized: "Could not delete model: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Trash
 
     /// Moves a model into the `deleted/` folder inside the archive root.
@@ -342,7 +432,7 @@ final class ArchiveStore: ObservableObject {
             try FileManager.default.createDirectory(at: trashURL, withIntermediateDirectories: true)
             let target = ModelImporter.uniqueFolderURL(for: model.folderURL.lastPathComponent, in: trashURL)
             try FileManager.default.moveItem(at: model.folderURL, to: target)
-            reload()
+            forceReload()
         } catch {
             errorMessage = String(localized: "Could not move model: \(error.localizedDescription)")
         }
@@ -354,7 +444,7 @@ final class ArchiveStore: ObservableObject {
         do {
             let target = ModelImporter.uniqueFolderURL(for: model.folderURL.lastPathComponent, in: rootURL)
             try FileManager.default.moveItem(at: model.folderURL, to: target)
-            reload()
+            forceReload()
         } catch {
             errorMessage = String(localized: "Could not move model: \(error.localizedDescription)")
         }
@@ -370,16 +460,14 @@ final class ArchiveStore: ObservableObject {
             } catch {
                 try FileManager.default.removeItem(at: model.folderURL)
             }
-            reload()
+            forceReload()
         } catch {
             errorMessage = String(localized: "Could not delete model: \(error.localizedDescription)")
         }
     }
 
     static func todayISO() -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withFullDate]
-        return formatter.string(from: Date())
+        Model3D.addedFormatter.string(from: Date())
     }
 
     // MARK: - Tags & collections

@@ -7,6 +7,7 @@ struct SidebarView: View {
     @Binding var matchAll: Bool
     @Binding var minRating: Int
     @Binding var noSourceOnly: Bool
+    @Binding var pendingAIOnly: Bool
     @Binding var recentFirst: Bool
     @Binding var showingTrash: Bool
 
@@ -18,6 +19,7 @@ struct SidebarView: View {
                     selectedCollection = nil
                     minRating = 0
                     noSourceOnly = false
+                    pendingAIOnly = false
                     showingTrash = false
                 } label: {
                     HStack {
@@ -130,6 +132,25 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Show only models without a source link")
+
+                let pendingCount = store.models.filter(\.hasPendingAISuggestions).count
+                if pendingCount > 0 {
+                    Button {
+                        pendingAIOnly.toggle()
+                    } label: {
+                        HStack {
+                            Image(systemName: pendingAIOnly ? "checkmark.circle.fill" : "sparkles")
+                                .foregroundStyle(pendingAIOnly ? Color.accentColor : .orange)
+                            Text("With AI suggestions")
+                            Spacer()
+                            Text("\(pendingCount)")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .help("Show only models with unreviewed AI suggestions")
+                }
             }
 
             Section {

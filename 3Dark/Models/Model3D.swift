@@ -32,9 +32,12 @@ struct Model3D: Identifiable, Equatable, Hashable {
 
     var rating: Int { Int(frontmatter.string("rating")) ?? 0 }
 
-    private static let addedFormatter: ISO8601DateFormatter = {
+    static let addedFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withFullDate]
+        // Local time zone: otherwise a date written late in the evening
+        // parses back as the previous day (GMT is the default).
+        formatter.timeZone = .current
         return formatter
     }()
 
@@ -87,6 +90,21 @@ struct Model3D: Identifiable, Equatable, Hashable {
     /// AI-suggested tags (front matter `ai_tags`).
     var aiTags: [String] { frontmatter.list("ai_tags") }
 
+    /// AI suggestions still waiting for accept/dismiss. `ai_updated` is
+    /// only a check marker, not a suggestion.
+    var hasPendingAISuggestions: Bool {
+        frontmatter.fields.contains { field in
+            field.key.hasPrefix("ai_") && field.key != "ai_updated" && !field.value.isEmpty && field.value != "[]"
+        }
+    }
+
+    /// Cached bounding-box size (front matter `dimensions`).
+    var dimensions: ModelDimensions? {
+        ModelDimensions.parse(frontmatter.string("dimensions"))
+    }
+
+    var printLog: [PrintLogEntry] { PrintLog.parse(body: body) }
+
     var markdownURL: URL { folderURL.appendingPathComponent("model.md") }
     var thumbnailURL: URL { folderURL.appendingPathComponent(".thumbnail.png") }
 
@@ -102,13 +120,26 @@ struct Model3D: Identifiable, Equatable, Hashable {
         sliceableExtensions.contains(url.pathExtension.lowercased())
     }
 
+    /// Sort key for recency: day first, then the folder's creation time
+    /// as tie-breaker.
+    ///
+    /// The day must be normalized: `added` has no time of day (parses to
+    /// midnight), while the folder fallback carries one. Comparing them
+    /// raw lets a model created earlier the same day — e.g. synced stock
+    /// without an `added` field — outrank a fresh import.
+    var addedSortKey: (Date, Date) {
+        let base = addedDate ?? .distantPast
+        let day = base == .distantPast ? base : Calendar.current.startOfDay(for: base)
+        return (day, addedFallbackDate ?? .distantPast)
+    }
+
     /// Which models count as "recently added" — either younger than
     /// `value` days or the newest `value` models, per the setting.
     static func recentIDs(in models: [Model3D], mode: String, value: Int, now: Date = Date()) -> Set<String> {
         if mode == "count" {
             let newest = models
                 .filter { $0.addedDate != nil }
-                .sorted { $0.addedDate! > $1.addedDate! }
+                .sorted { $0.addedSortKey > $1.addedSortKey }
                 .prefix(max(0, value))
             return Set(newest.map(\.id))
         }
