@@ -43,7 +43,7 @@ struct ModelDetailView: View {
         _material = State(initialValue: fm.string("material"))
         _nozzle = State(initialValue: fm.string("nozzle"))
         _layerHeight = State(initialValue: fm.string("layer_height"))
-        _supports = State(initialValue: fm.string("supports"))
+        _supports = State(initialValue: Model3D.normalizedSupports(fm.string("supports")))
         _printed = State(initialValue: fm.string("printed"))
         _rating = State(initialValue: Int(fm.string("rating")) ?? 0)
         _bodyText = State(initialValue: model.body)
@@ -289,7 +289,20 @@ struct ModelDetailView: View {
             aiRow("nozzle", text: $nozzle)
             field("Layer height", text: $layerHeight, prompt: "0.2")
             aiRow("layer_height", text: $layerHeight)
-            field("Supports", text: $supports, prompt: "yes / no")
+            GridRow {
+                Text("Supports")
+                    .gridColumnAlignment(.trailing)
+                    .foregroundStyle(.secondary)
+                Picker("Supports", selection: $supports) {
+                    Text("–").tag("")
+                    Text("Yes").tag("yes")
+                    Text("No").tag("no")
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 220, alignment: .leading)
+                .onChange(of: supports) { _, _ in save() }
+            }
             aiRow("supports", text: $supports)
             field("Printed on", text: $printed, prompt: "YYYY-MM-DD")
 

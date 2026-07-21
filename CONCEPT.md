@@ -82,6 +82,11 @@ Prints fine at 0.2 mm without supports …
 - `preview_image` (optional): path of an image file relative to the model
   folder, shown in the overview instead of the rendered 3D thumbnail —
   selectable with one click in the file list.
+- `added` (ISO date, local time zone) anchors the "recently added"
+  sorting; written on create/import and frozen on the first save, so
+  editing metadata never re-sorts a model as new.
+- `supports` is a yes/no field, edited via a segmented control
+  (synonyms and legacy German values are normalized on load).
 - `collections` groups models that belong together (e.g. a chess set).
   Membership lives with the model — a model can be in several
   collections, folder renames break nothing. Semantics: tags describe
@@ -182,7 +187,11 @@ failing validation is dropped, never repaired. Results are stored as
 so they can never collide with canonical fields; the UI shows them as
 ✨-marked suggestions with per-value Accept/Dismiss, and AI tags do not
 participate in filtering until accepted. The API key lives in the macOS
-keychain (Settings → AI); without a key the feature stays inert. Only
+keychain (Settings → AI); without a key the feature stays inert. AI
+covers `material`, `nozzle`, `layer_height`, `supports`, `license`,
+`author`, and a cleaned-up title. Settings → AI also has a "Reset AI
+Check Status" action that clears the `ai_updated` marker from every
+model so a batch run re-examines the whole archive. Only
 the source URL, page text, and the names of missing fields leave the
 machine — never 3D files.
 

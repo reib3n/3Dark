@@ -287,9 +287,11 @@ actor AIEnrichmentService {
     You extract 3D printing model metadata from the text of a model page. \
     Only output values that are literally supported by the page text; use null \
     whenever the text does not clearly state a value. Never guess or infer. \
-    "supports" is "yes" or "no" only if the page clearly states whether support \
-    structures are needed. "nozzle" and "layer_height" are millimeter values \
-    like "0.4". "license" is the license named on the page. "tags" are up to 6 \
+    "material" is the printing material named on the page (e.g. PLA, PETG, \
+    ABS, TPU). "supports" is "yes" or "no" only if the page clearly states \
+    whether support structures are needed. "nozzle" is the nozzle diameter and \
+    "layer_height" is the layer height, both millimeter values like "0.4". \
+    "license" is the license named on the page. "tags" are up to 6 \
     short lowercase keywords describing the model, based on the page content; \
     use an empty array if unsure. "clean_title" is a clean, human-readable \
     version of the current model name: natural word order, no underscores, \

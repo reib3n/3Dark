@@ -51,6 +51,30 @@
     "Anthropic API Key:" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Anthropic API-Key:" } } }
     },
+    "Clears the “already checked” mark from %lld models so the next batch run examines the whole archive again." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Entfernt die „bereits geprüft“-Markierung von %lld Modellen, damit der nächste Batch-Lauf das ganze Archiv erneut prüft." } } }
+    },
+    "Every model will be eligible for the AI batch run again. Existing suggestions and accepted values are not changed." : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alle Modelle sind wieder für den KI-Batch-Lauf verfügbar. Vorhandene Vorschläge und übernommene Werte bleiben unverändert." } } }
+    },
+    "No" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nein" } } }
+    },
+    "Reset" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Zurücksetzen" } } }
+    },
+    "Reset AI Check Status" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "KI-Prüfstatus zurücksetzen" } } }
+    },
+    "Reset AI Check Status?" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "KI-Prüfstatus zurücksetzen?" } } }
+    },
+    "Supports" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Stützen" } } }
+    },
+    "Yes" : {
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ja" } } }
+    },
     "Could not load the source page: %@" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die Quellseite konnte nicht geladen werden: %@" } } }
     },
@@ -544,9 +568,6 @@
     },
     "Source" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Quelle" } } }
-    },
-    "Supports" : {
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Stützen" } } }
     },
     "Switch between grid and list view" : {
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Zwischen Raster- und Listenansicht umschalten" } } }

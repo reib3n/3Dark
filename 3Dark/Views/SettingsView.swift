@@ -149,8 +149,10 @@ struct SettingsView: View {
 /// AI enrichment settings: the Anthropic API key lives in the keychain
 /// and is never displayed back.
 private struct AISettingsTab: View {
+    @EnvironmentObject private var store: ArchiveStore
     @State private var keyDraft = ""
     @State private var hasStoredKey = false
+    @State private var showingResetConfirmation = false
 
     var body: some View {
         Form {
@@ -184,10 +186,27 @@ private struct AISettingsTab: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Section {
+                let checkedCount = store.models.filter { !$0.frontmatter.string("ai_updated").isEmpty }.count
+                Button("Reset AI Check Status") {
+                    showingResetConfirmation = true
+                }
+                .disabled(checkedCount == 0)
+                Text("Clears the “already checked” mark from \(checkedCount) models so the next batch run examines the whole archive again.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .onAppear {
             hasStoredKey = AIEnrichmentService.hasAPIKey
+        }
+        .alert("Reset AI Check Status?", isPresented: $showingResetConfirmation) {
+            Button("Reset", role: .destructive) { store.resetAICheckStatus() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every model will be eligible for the AI batch run again. Existing suggestions and accepted values are not changed.")
         }
     }
 }

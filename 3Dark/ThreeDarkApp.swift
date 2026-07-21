@@ -25,6 +25,7 @@ struct ThreeDarkApp: App {
 
         Settings {
             SettingsView()
+                .environmentObject(store)
         }
     }
 }

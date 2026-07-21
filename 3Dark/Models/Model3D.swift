@@ -120,6 +120,16 @@ struct Model3D: Identifiable, Equatable, Hashable {
         sliceableExtensions.contains(url.pathExtension.lowercased())
     }
 
+    /// Maps support-value synonyms (English + German, legacy included)
+    /// onto the canonical "yes"/"no"; unknown values are kept verbatim.
+    static func normalizedSupports(_ value: String) -> String {
+        switch value.trimmingCharacters(in: .whitespaces).lowercased() {
+        case "yes", "ja", "true", "required", "1": return "yes"
+        case "no", "nein", "false", "none", "not required", "0": return "no"
+        default: return value.trimmingCharacters(in: .whitespaces)
+        }
+    }
+
     /// Sort key for recency: day first, then the folder's creation time
     /// as tie-breaker.
     ///

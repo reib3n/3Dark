@@ -232,6 +232,13 @@ final class ArchiveStore: ObservableObject {
         if m.frontmatter["tags"] == nil {
             m.frontmatter.tags = []
         }
+        // Freeze the recency anchor: once written, `added` never changes,
+        // so editing metadata can't push a model back into "recently
+        // added". Legacy models get stamped with their folder date here.
+        if m.frontmatter["added"] == nil {
+            let anchor = model.addedDate ?? Date()
+            m.frontmatter.setString("added", Model3D.addedFormatter.string(from: anchor))
+        }
         do {
             try m.frontmatter.serialized(body: m.body)
                 .write(to: m.markdownURL, atomically: true, encoding: .utf8)
@@ -468,6 +475,16 @@ final class ArchiveStore: ObservableObject {
 
     static func todayISO() -> String {
         Model3D.addedFormatter.string(from: Date())
+    }
+
+    /// Clears the "AI already checked" marker from every model so the
+    /// next batch run re-examines the whole archive.
+    func resetAICheckStatus() {
+        for model in models where !model.frontmatter.string("ai_updated").isEmpty {
+            var m = model
+            m.frontmatter["ai_updated"] = nil
+            save(m)
+        }
     }
 
     // MARK: - Tags & collections
